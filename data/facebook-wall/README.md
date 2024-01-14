@@ -13,16 +13,14 @@ More information about the network is provided here:
 
 ## Files
 
-- `meta.txt`: Metadata about the network 
-- `graph.tsv`: The adjacency matrix of the network in whitespace-separated
-  values format, with one edge per line
+- `meta.yaml`: metadata about the network 
+- `graph.csv`: the edge list of the network in comma-separated values format,
+  with one edge per line
 
 The meaning of the columns in `graph.tsv` is
-- 1st: ID of *from* node 
-- 2nd: ID of *to* node
-- 3rd (if present): weight or multiplicity of edge
-- 4th (if present): timestamp of edges (UNIX time)
-
+- `from`: ID of *from* node 
+- `to`: ID of *to* node
+- `time`: timestamp of edges (UNIX time)
 
 ## References
 
