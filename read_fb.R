@@ -16,4 +16,4 @@ times <- E(g)$time
 
 m <- interval(first(times), last(times)) |>
   time_length("months")
-sprintf("%d years and %d months", floor(m / 12), floor((m - floor(m)) * 12))
+sprintf("%d years and %d months", floor(m / 12), floor(m - 12 * floor(m / 12)))
