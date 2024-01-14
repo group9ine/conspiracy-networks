@@ -11,18 +11,20 @@ write on their own wall, the network contains loops.
 More information about the network is provided here:
 <http://konect.cc/networks/facebook-wosn-wall>.
 
-Files: 
-- `meta.txt` – Metadata about the network 
-- `graph.tsv` – The adjacency matrix of the network in whitespace-separated
+## Files
+
+- `meta.txt`: Metadata about the network 
+- `graph.tsv`: The adjacency matrix of the network in whitespace-separated
   values format, with one edge per line
 
-The meaning of the columns in `graph` are
-- 1st – ID of *from* node 
-- 2nd – ID of *to* node
-- 3rd (if present) – weight or multiplicity of edge
-- 4th (if present) – timestamp of edges Unix time
+The meaning of the columns in `graph.tsv` is
+- 1st: ID of *from* node 
+- 2nd: ID of *to* node
+- 3rd (if present): weight or multiplicity of edge
+- 4th (if present): timestamp of edges (UNIX time)
 
-Use the following references for citation:
+
+## References
 
 ```bib
 @MISC{konect:2017:facebook-wosn-wall,
@@ -39,7 +41,7 @@ Use the following references for citation:
     booktitle = {Proc. Workshop on Online Soc. Netw.},
     year = {2009},
     pages = {37--42},
- }
+}
 
 @inproceedings{viswanath09,
     author = {Viswanath, Bimal and Mislove, Alan and Cha, Meeyoung
@@ -48,30 +50,29 @@ Use the following references for citation:
     booktitle = {Proc. Workshop on Online Soc. Netw.},
     year = {2009},
     pages = {37--42},
- }
-
-
-@inproceedings{konect,
-	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
-	author = {Jérôme Kunegis},
-	year = {2013},
-	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
-	pages = {1343--1350},
-	url = {http://dl.acm.org/citation.cfm?id=2488173},
-	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
-	url_web = {http://konect.cc/},
-	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
 }
 
 @inproceedings{konect,
-	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
-	author = {Jérôme Kunegis},
-	year = {2013},
-	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
-	pages = {1343--1350},
-	url = {http://dl.acm.org/citation.cfm?id=2488173},
-	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
-	url_web = {http://konect.cc/},
-	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+    title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+    author = {Jérôme Kunegis},
+    year = {2013},
+    booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+    pages = {1343--1350},
+    url = {http://dl.acm.org/citation.cfm?id=2488173},
+    url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+    url_web = {http://konect.cc/},
+    url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+@inproceedings{konect,
+    title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+    author = {Jérôme Kunegis},
+    year = {2013},
+    booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+    pages = {1343--1350},
+    url = {http://dl.acm.org/citation.cfm?id=2488173},
+    url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+    url_web = {http://konect.cc/},
+    url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
 }
 ```
