@@ -1,1 +1,1 @@
-# conspiracy-networks
+# Conspiracy Networks
