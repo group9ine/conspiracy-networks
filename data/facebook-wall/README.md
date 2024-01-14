@@ -1,10 +1,10 @@
 # Facebook wall posts network, part of the Koblenz Network Collection
 
-This directory contains the TSV and related files of the facebook-wosn-wall
-network: The is the directed network of a small subset of posts to other user's
-wall on Facebook. The nodes of the network are Facebook users, and each directed
-edge represents one post, linking the users writing a post to the users whose
-wall the post is written on. Since users may write multiple posts on a wall, the
+This directory contains the CSV and related files of the `facebook-wosn-wall`
+network, a directed network of a small subset of posts to other user’s wall on
+Facebook. The nodes of the network are Facebook users, and each directed edge
+represents one post, linking the users writing a post to the users whose wall
+the post is written on. Since users may write multiple posts on a wall, the
 network allows multiple edges connecting a single node pair. Since users may
 write on their own wall, the network contains loops.
 
@@ -14,10 +14,10 @@ More information about the network is provided here:
 ## Files
 
 - `meta.yaml`: metadata about the network 
-- `graph.csv`: the edge list of the network in comma-separated values format,
-  with one edge per line
+- `graph.csv`: edge list of the network in comma-separated values format, with
+  one edge per line
 
-The meaning of the columns in `graph.tsv` is
+The meaning of the columns in `graph.csv` is
 - `from`: ID of *from* node 
 - `to`: ID of *to* node
 - `time`: timestamp of edges (UNIX time)
