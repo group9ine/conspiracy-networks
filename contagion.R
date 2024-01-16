@@ -6,6 +6,7 @@ dl2 <- read.csv("data/fb-orgs/L2.csv", col.names = c("from", "to"))
 gl2 <- graph_from_data_frame(dl2, directed = FALSE) |> simplify()
 V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
+
 contagion <- function(graph, n_iters, c_prob, d_wind, thresh) {
   adj_mat <- igraph::get.adjacency(graph)
   n_nodes <- igraph::vcount(graph)
@@ -15,21 +16,11 @@ contagion <- function(graph, n_iters, c_prob, d_wind, thresh) {
   prev <- rep(0, n_iters)
 
   # infect a node at random
-  inf[floor(runif(1, min = 1, max = n_nodes + 1))] <- TRUE
+  pick <- floor(runif(1, min = 1, max = n_nodes + 1))
+  inf[pick] <- TRUE
+  doses[pick, d_wind] <- thresh
 
-  for (t in seq_len(d_wind)) {
-    for (i in seq_len(n_nodes)[inf]) {
-      if (runif(1) < c_prob) {
-        nbs <- adj_mat[, i, drop = FALSE]@i + 1
-        doses[nbs, t] <- doses[nbs, t] + 1
-      }
-    }
-  }
-
-  inf <- rowSums(doses) > thresh
-  prev[d_wind] <- sum(inf)
-
-  for (t in seq(d_wind + 1, n_iters)) {
+  for (t in seq(1, n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     for (i in seq_len(n_nodes)[inf]) {
       if (runif(1) < c_prob) {
@@ -38,7 +29,7 @@ contagion <- function(graph, n_iters, c_prob, d_wind, thresh) {
       }
     }
 
-    inf <- rowSums(doses) > thresh
+    inf <- rowSums(doses) >= thresh
     prev[t] <- sum(inf)
   }
 
