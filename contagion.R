@@ -14,7 +14,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 contagion <- function(graph, n_iters, n_inf, c_rate, d_wind, thresh) {
   degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
-  tol <- 1e-4 * n_nodes
+  tol <- 5e-3 * n_nodes
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
   inf <- rep(FALSE, n_nodes)
@@ -36,7 +36,7 @@ contagion <- function(graph, n_iters, n_inf, c_rate, d_wind, thresh) {
     inf <- rowSums(doses) >= thresh
     prev[t] <- sum(inf)
 
-    if (t > 30 && dplyr::near(mean(prev[seq(t - 30, t - 1)]), prev[t], tol))
+    if (t > 30 && sd(prev[seq(t - 30, t - 1)]) < tol)
       break
   }
 
