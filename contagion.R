@@ -12,12 +12,12 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
 contagion <- function(
-  graph, n_iters, n_inf, c_rate, d_wind, thresh, display = FALSE
+  graph, n_iters, n_inf, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
 ) {
   degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
-  rates <- rpois(n_nodes, lambda = c_rate)
-  tol <- 5e-3 * n_nodes
+  # randomly assign a contact rate to each node
+  rates <- rlnorm(n_nodes, c_rate_mu, c_rate_sig)
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
   inf <- rep(FALSE, n_nodes)
@@ -27,6 +27,7 @@ contagion <- function(
   inf[pick] <- TRUE
   doses[pick, d_wind] <- thresh
 
+  tol <- 5e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     for (i in seq_len(n_nodes)[inf]) {
