@@ -2,6 +2,10 @@ library(igraph)
 library(ggplot2)
 source("src/utils.R")
 
+if (Sys.info()["sysname"] == "Darwin") {
+  setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
+}
+
 dl2 <- read.csv("data/fb-orgs/L2.csv", col.names = c("from", "to"))
 gl2 <- graph_from_data_frame(dl2, directed = FALSE) |> simplify()
 V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
