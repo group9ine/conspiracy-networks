@@ -1,6 +1,6 @@
 logbins <- function(data, base = 10, dlog = 0.1) {
   # determine counts from data
-  values <- sort(unique(data))
+  values <- seq_len(max(data))
   counts <- vapply(values, \(x) sum(data == x), integer(1))
 
   # get (log-)midpoints and lower/upper limits (to nearest integer)
@@ -23,6 +23,7 @@ logbins <- function(data, base = 10, dlog = 0.1) {
       lower, upper
     )
   )
+
   y <- log(y, base)
 
   # remove rows with < 0 log-counts when returning
