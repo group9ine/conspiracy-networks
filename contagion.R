@@ -7,7 +7,7 @@ gl2 <- graph_from_data_frame(dl2, directed = FALSE) |> simplify()
 V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
-contagion <- function(graph, n_iters, c_prob, d_wind, thresh) {
+contagion <- function(graph, n_iters, n_inf, c_prob, d_wind, thresh) {
   adj_mat <- igraph::get.adjacency(graph)
   n_nodes <- igraph::vcount(graph)
 
@@ -15,8 +15,8 @@ contagion <- function(graph, n_iters, c_prob, d_wind, thresh) {
   inf <- rep(FALSE, n_nodes)
   prev <- rep(0, n_iters)
 
-  # infect a node at random
-  pick <- floor(runif(1, min = 1, max = n_nodes + 1))
+  # infect n_inf nodes at random
+  pick <- sample.int(n_iters, n_inf, replace = FALSE)
   inf[pick] <- TRUE
   doses[pick, d_wind] <- thresh
 
