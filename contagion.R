@@ -7,7 +7,7 @@ gl2 <- graph_from_data_frame(dl2, directed = FALSE) |> simplify()
 V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
-contagion <- function(graph, n_iters, n_inf, c_prob, d_wind, thresh) {
+contagion <- function(graph, n_iters, n_inf, c_rate, d_wind, thresh) {
   degs <- unname(igraph::degree(graph))
   n_nodes <- igraph::vcount(graph)
 
@@ -24,12 +24,14 @@ contagion <- function(graph, n_iters, n_inf, c_prob, d_wind, thresh) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     for (i in seq_len(n_nodes)[inf]) {
       nbs <- igraph::neighbors(graph, i, mode = "out")
-      nbs <- nbs[degs[i] * runif(length(nbs)) < c_prob]
+      nbs <- nbs[degs[i] * runif(length(nbs)) < c_rate]
       doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
     }
 
     inf <- rowSums(doses) >= thresh
     prev[t] <- sum(inf)
+
+    if (t > 30 && all(prev[seq(t - 30, t - 1)] == prev[t])) break
   }
 
   return(prev / n_nodes)
