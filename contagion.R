@@ -8,7 +8,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
 contagion <- function(graph, n_iters, n_inf, c_rate, d_wind, thresh) {
-  degs <- unname(igraph::degree(graph))
+  degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
