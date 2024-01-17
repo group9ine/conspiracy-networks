@@ -14,6 +14,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 contagion <- function(
   graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
 ) {
+  # we need to access by row later, so convert to row-ordered sp. mat.
   adj_mat <- as(igraph::get.adjacency(graph), "RsparseMatrix")
   degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
@@ -35,6 +36,8 @@ contagion <- function(
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     # loop over infected nodes
     for (i in seq_len(n_nodes)[inf]) {
+      # this returns the indices of the i-th row's non-zero elements
+      # i.e. out-neighbors of node i
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
       nbs <- nbs[degs[i] * runif(length(nbs)) < rates[i]]
       doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
