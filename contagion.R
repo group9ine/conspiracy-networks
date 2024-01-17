@@ -20,28 +20,33 @@ contagion <- function(
   rates <- rlnorm(n_nodes, c_rate_mu, c_rate_sig)
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
-  # 1 = sus, 0 = inf, < 0 = rec
-  status <- rep(1, n_nodes)
+  inf <- rep(FALSE, n_nodes)
+  rec <- rep(FALSE, n_nodes)
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
 
   pick <- sample.int(n_iters, inf_0, replace = FALSE)
-  status[pick] <- 0
+  inf[pick] <- TRUE
   doses[pick, d_wind] <- thresh
 
   tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     # loop over infected nodes
-    for (i in seq_len(n_nodes)[!status]) {
+    for (i in seq_len(n_nodes)[inf]) {
       nbs <- igraph::neighbors(graph, i, mode = "out")
       nbs <- nbs[degs[i] * runif(length(nbs)) < rates[i]]
       doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
     }
 
-    status <- status - rowSums(doses) >= thresh
-    n_inf[t] <- sum(!status)
-    n_rec[t] <- sum(status < 0)
+    over <- rowSums(doses) >= thresh
+    new_inf <- !(inf | rec) & over
+    new_rec <- inf & !over
+
+    inf <- inf | new_inf
+    rec <- rec | new_rec
+    n_inf[t] <- sum(inf)
+    n_rec[t] <- sum(rec)
 
     #if (t > 30 && sd(n_rec[(t - 30):t]) < tol) {
     #  n_inf <- n_inf[1:t]
@@ -55,8 +60,9 @@ contagion <- function(
   n_sus <- 1 - n_inf - n_rec
 
   if (display) {
-    data.frame(
-      iter = seq_along(n_inf), inf = n_inf, rec = n_rec, sus = n_sus
+    plt <- data.frame(
+      iter = seq_along(n_inf),
+      inf = n_inf, rec = n_rec, sus = n_sus
     ) |>
       tidyr::pivot_longer(-iter, names_to = "class", values_to = "pop") |>
       dplyr::mutate(class = factor(class, levels = c("sus", "inf", "rec"))) |>
@@ -67,8 +73,11 @@ contagion <- function(
           labels = c("Susceptible", "Infected", "Recovered")
         ) +
         ggplot2::labs(
-          x = "Time step", y = "Fractional prevalence", colour = "Compartment"
+          x = "Time step",
+          y = "Fractional prevalence",
+          colour = "Compartment"
         )
+    print(plt)
   }
 
   return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
