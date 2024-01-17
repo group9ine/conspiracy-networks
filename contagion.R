@@ -14,6 +14,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 contagion <- function(
   graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
 ) {
+  adj_mat <- as(igraph::get.adjacency(graph), "RsparseMatrix")
   degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
   # randomly assign a contact rate to each node
@@ -34,25 +35,20 @@ contagion <- function(
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     # loop over infected nodes
     for (i in seq_len(n_nodes)[inf]) {
-      nbs <- igraph::neighbors(graph, i, mode = "out")
+      nbs <- adj_mat[i,, drop = FALSE]@j + 1
       nbs <- nbs[degs[i] * runif(length(nbs)) < rates[i]]
       doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
     }
 
+    # update boolean vectors
     over <- rowSums(doses) >= thresh
-    new_inf <- !(inf | rec) & over
-    new_rec <- inf & !over
+    new_inf <- !rec & over
+    rec <- rec | (inf & !over)
+    inf <- new_inf
 
-    inf <- inf | new_inf
-    rec <- rec | new_rec
+    # update counter vectors
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
-
-    #if (t > 30 && sd(n_rec[(t - 30):t]) < tol) {
-    #  n_inf <- n_inf[1:t]
-    #  n_rec <- n_rec[1:t]
-    #  break
-    #}
   }
 
   n_inf <- n_inf / n_nodes
