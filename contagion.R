@@ -12,7 +12,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
 contagion <- function(
-  graph, n_iters, n_inf, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
+  graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
 ) {
   degs <- igraph::degree(graph)
   n_nodes <- igraph::vcount(graph)
@@ -20,35 +20,56 @@ contagion <- function(
   rates <- rlnorm(n_nodes, c_rate_mu, c_rate_sig)
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
-  inf <- rep(FALSE, n_nodes)
-  prev <- rep(0, n_iters)
+  # 1 = sus, 0 = inf, < 0 = rec
+  status <- rep(1, n_nodes)
+  n_inf <- rep(0, n_iters)
+  n_rec <- rep(0, n_iters)
 
-  pick <- sample.int(n_iters, n_inf, replace = FALSE)
-  inf[pick] <- TRUE
+  pick <- sample.int(n_iters, inf_0, replace = FALSE)
+  status[pick] <- 0
   doses[pick, d_wind] <- thresh
 
-  tol <- 5e-3 * n_nodes  # for the stopping condition
+  tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
-    for (i in seq_len(n_nodes)[inf]) {
+    # loop over infected nodes
+    for (i in seq_len(n_nodes)[!status]) {
       nbs <- igraph::neighbors(graph, i, mode = "out")
       nbs <- nbs[degs[i] * runif(length(nbs)) < rates[i]]
       doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
     }
 
-    inf <- rowSums(doses) >= thresh
-    prev[t] <- sum(inf)
+    status <- status - rowSums(doses) >= thresh
+    n_inf[t] <- sum(!status)
+    n_rec[t] <- sum(status < 0)
 
-    if (t > 30 && sd(prev[(t - 30):t]) < tol) {
-      prev <- prev[1:t]
-      break
-    }
+    #if (t > 30 && sd(n_rec[(t - 30):t]) < tol) {
+    #  n_inf <- n_inf[1:t]
+    #  n_rec <- n_rec[1:t]
+    #  break
+    #}
   }
 
-  prev <- prev / n_nodes
+  n_inf <- n_inf / n_nodes
+  n_rec <- n_rec / n_nodes
+  n_sus <- 1 - n_inf - n_rec
 
-  if (display)
-    plot(prev, type = "l", xlab = "Time step", ylab = "Fractional prevalence")
+  if (display) {
+    data.frame(
+      iter = seq_along(n_inf), inf = n_inf, rec = n_rec, sus = n_sus
+    ) |>
+      tidyr::pivot_longer(-iter, names_to = "class", values_to = "pop") |>
+      dplyr::mutate(class = factor(class, levels = c("sus", "inf", "rec"))) |>
+      ggplot(ggplot2::aes(iter, pop, colour = class)) +
+        ggplot2::geom_line() +
+        ggplot2::scale_colour_manual(
+          values = c("darkgoldenrod1", "firebrick", "dodgerblue4"),
+          labels = c("Susceptible", "Infected", "Recovered")
+        ) +
+        ggplot2::labs(
+          x = "Time step", y = "Fractional prevalence", colour = "Compartment"
+        )
+  }
 
-  return(prev)
+  return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
 }
