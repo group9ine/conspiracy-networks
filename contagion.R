@@ -36,8 +36,8 @@ contagion <- function(graph, n_iters, n_inf, c_rate, d_wind, thresh) {
     inf <- rowSums(doses) >= thresh
     prev[t] <- sum(inf)
 
-    if (t > 30 && sd(prev[seq(t - 30, t - 1)]) < tol)
-      break
+    if (t > 30 && sd(prev[(t - 30):t]) < tol)
+      return(prev[1:t] / n_nodes)
   }
 
   return(prev / n_nodes)
