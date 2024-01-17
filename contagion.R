@@ -8,7 +8,7 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
 contagion <- function(graph, n_iters, n_inf, c_prob, d_wind, thresh) {
-  adj_mat <- igraph::get.adjacency(graph)
+  degs <- unname(igraph::degree(graph))
   n_nodes <- igraph::vcount(graph)
 
   doses <- matrix(0, nrow = n_nodes, ncol = d_wind)
@@ -20,13 +20,12 @@ contagion <- function(graph, n_iters, n_inf, c_prob, d_wind, thresh) {
   inf[pick] <- TRUE
   doses[pick, d_wind] <- thresh
 
-  for (t in seq(1, n_iters)) {
+  for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     for (i in seq_len(n_nodes)[inf]) {
-      if (runif(1) < c_prob) {
-        nbs <- adj_mat[, i, drop = FALSE]@i + 1
-        doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
-      }
+      nbs <- igraph::neighbors(graph, i, mode = "out")
+      nbs <- nbs[degs[i] * runif(length(nbs)) < c_prob]
+      doses[nbs, d_wind] <- doses[nbs, d_wind] + 1
     }
 
     inf <- rowSums(doses) >= thresh
