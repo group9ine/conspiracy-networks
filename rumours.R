@@ -41,8 +41,8 @@ V(gcph)$name <- seq_len(vcount(gcph))  # normalize naming
 is_simple(gcph)
 clusters(gcph)  # only one cc, good
 
-# contagion with random contact rates (log-normally distributed)
-contagion_rnd <- function(
+# rumour spreading with random contact rates (log-normally distributed)
+rumour_rnd <- function(
   graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh,
   seed = FALSE, display = FALSE
 ) {
@@ -130,8 +130,9 @@ contagion_rnd <- function(
   return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
 }
 
-contagion_skep <- function(
-  graph, n_iters, inf_0, p_skep, p_lose, d_wind, thresh,
+# rumour spreading as in Pastor-Satorass' review
+rumour_skep <- function(
+  graph, n_iters, inf_0, p_talk, p_skep, p_stop, d_wind, thresh,
   seed = FALSE, display = FALSE
 ) {
   if (seed) set.seed(seed)
@@ -165,7 +166,9 @@ contagion_skep <- function(
       # this returns the indices of the i-th row's non-zero elements
       # i.e. out-neighbors of node i
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
-      wgt <- adj_mat[i,, drop = FALSE]@x
+      nmask <- runif(length(nbs)) < p_talk
+      nbs <- nbs[nmask]
+      wgt <- adj_mat[i,, drop = FALSE]@x[nmask]
 
       smask <- sus[nbs]
       snbs <- nbs[smask]
@@ -174,8 +177,7 @@ contagion_skep <- function(
       doses[snbs, d_wind] <- doses[snbs, d_wind] +
         (1 - 2 * (runif(sum(smask)) < p_skep)) * wgt[smask]
       # current node (infected) loses doses for each neighbouring I or R
-      doses[i, d_wind] <- doses[i, d_wind] -
-        sum((runif(sum(!smask)) < p_lose) * wgt[!smask])
+      doses[i, d_wind] <- doses[i, d_wind] - sum(runif(sum(!smask)) < p_stop)
     }
 
     # update boolean vectors
@@ -228,3 +230,18 @@ contagion_skep <- function(
 
   return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
 }
+
+# null model
+ger <- sample_gnm(n = vcount(gcph), m = ecount(gcph))
+res_er <- rumour_skep(
+  graph = ger, n_iters = 100, inf_0 = 1,
+  p_talk = 0.8, p_skep = 0.2, p_stop = 0.1,
+  d_wind = 7, thresh = 5,
+  seed = FALSE, display = TRUE
+)
+res_cph <- rumour_skep(
+  graph = gcph, n_iters = 100, inf_0 = 1,
+  p_talk = 0.4, p_skep = 0.2, p_stop = 0.1,
+  d_wind = 7, thresh = 5,
+  seed = FALSE, display = TRUE
+)
