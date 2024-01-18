@@ -27,7 +27,7 @@ contagion <- function(
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
 
-  pick <- sample.int(n_iters, inf_0, replace = FALSE)
+  pick <- sample.int(n_nodes, inf_0, replace = FALSE)
   inf[pick] <- TRUE
   doses[pick, d_wind] <- thresh
 
