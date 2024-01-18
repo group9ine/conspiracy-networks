@@ -13,8 +13,11 @@ V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 # contagion with random contact rates (log-normally distributed)
 contagion_rnd <- function(
-  graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
+  graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh,
+  seed = FALSE, display = FALSE
 ) {
+  if (seed) set.seed(seed)
+
   # we need to access by row later, so convert to row-ordered sp. mat.
   adj_mat <- as(igraph::get.adjacency(graph), "RsparseMatrix")
   degs <- igraph::degree(graph)
@@ -53,6 +56,12 @@ contagion_rnd <- function(
     # update counter vectors
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
+
+    if (t > 30 && sd(n_inf[(t - 30):t]) < tol) {
+      n_inf <- n_inf[1:t]
+      n_rec <- n_rec[1:t]
+      break
+    }
   }
 
   n_inf <- n_inf / n_nodes
@@ -79,6 +88,9 @@ contagion_rnd <- function(
         )
     print(plt)
   }
+
+  # clean up the rng seed if it was set
+  rm(.Random.seed, envir = .GlobalEnv)
 
   return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
 }
