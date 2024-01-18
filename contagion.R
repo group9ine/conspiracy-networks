@@ -11,7 +11,8 @@ gl2 <- graph_from_data_frame(dl2, directed = FALSE) |> simplify()
 V(gl2)$name <- seq_len(vcount(gl2))  # normalize naming
 
 
-contagion <- function(
+# contagion with random contact rates (log-normally distributed)
+contagion_rnd <- function(
   graph, n_iters, inf_0, c_rate_mu, c_rate_sig, d_wind, thresh, display = FALSE
 ) {
   # we need to access by row later, so convert to row-ordered sp. mat.
