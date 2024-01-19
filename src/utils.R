@@ -29,3 +29,21 @@ logbins <- function(data, base = 10, dlog = 0.1) {
   # remove rows with < 0 log-counts when returning
   return(data.frame(x = x[y > 0], y = y[y > 0]))
 }
+
+ggsir <- function(n_inf, n_rec, n_sus) {
+  data.frame(inf = n_inf, rec = n_rec, sus = n_sus) |>
+    dplyr::mutate(iter = dplyr::row_number()) |>
+    tidyr::pivot_longer(-"iter", names_to = "class", values_to = "pop") |>
+    dplyr::mutate(class = factor(class, levels = c("sus", "inf", "rec"))) |>
+    ggplot2::ggplot(ggplot2::aes(iter, pop, colour = class)) +
+      ggplot2::geom_line() +
+      ggplot2::scale_colour_manual(
+        values = c("darkgoldenrod1", "firebrick", "dodgerblue4"),
+        labels = c("Susceptible", "Infected", "Recovered")
+      ) +
+      ggplot2::labs(
+        x = "Time step",
+        y = "Fractional prevalence",
+        colour = "Compartment"
+      )
+}
