@@ -162,13 +162,12 @@ rumour_skep <- function(
   for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
     # loop over infected nodes
-    for (i in seq_len(n_nodes)[inf]) {
+    nmask <- runif(n_nodes) < p_talk
+    for (i in seq_len(n_nodes)[inf & nmask]) {
       # this returns the indices of the i-th row's non-zero elements
       # i.e. out-neighbors of node i
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
-      nmask <- runif(length(nbs)) < p_talk
-      nbs <- nbs[nmask]
-      wgt <- adj_mat[i,, drop = FALSE]@x[nmask]
+      wgt <- adj_mat[i,, drop = FALSE]@x
 
       smask <- sus[nbs]
       snbs <- nbs[smask]
