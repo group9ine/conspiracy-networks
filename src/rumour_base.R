@@ -45,8 +45,8 @@ rumour_base <- function(
       inf[s_nbs[!r_mask]] <- TRUE
 
       # i can turn infected with probability rec_rate for each contact
-      # with an infected neighbour
-      is_rec <- any(runif(sum(inf[nbs])) < rec_rate)
+      # with an infected or recovered neighbour
+      is_rec <- any(runif(sum(inf[nbs]) + sum(rec[nbs])) < rec_rate)
       inf[i] <- !is_rec
       rec[i] <- is_rec
     }
@@ -74,7 +74,7 @@ rumour_base <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    sus = sus, rec = rec, inf = inf,
+    start = pick, sus = sus, rec = rec, inf = inf,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }
