@@ -2,8 +2,8 @@ library(igraph)
 library(ggplot2)
 library(data.table)
 source("src/utils.R")
-source("src/rumours_rnd.R")
-source("src/rumours_skep.R")
+source("src/rumour_rnd.R")
+source("src/rumour_skep.R")
 
 if (Sys.info()["sysname"] == "Darwin") {
   setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
