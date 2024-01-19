@@ -36,7 +36,7 @@ rumour_base <- function(
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
       s_mask <- sus[nbs]  # mask for every susceptible neighbour
       # subset the sus neighbors with probability spr_rate
-      s_nbs <- nbs[s_mask & runif(sum(s_mask)) < spr_rate]
+      s_nbs <- nbs[s_mask][runif(sum(s_mask)) < spr_rate)]
       # on this subset, select nodes that will recover with prob. p_skep
       r_mask <- runif(length(s_nbs)) < p_skep
 
