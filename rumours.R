@@ -161,22 +161,24 @@ rumour_skep <- function(
   tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     doses <- cbind(doses[, -1], rep(0, n_nodes))
-    # loop over infected nodes
-    nmask <- runif(n_nodes) < p_talk
-    for (i in seq_len(n_nodes)[inf & nmask]) {
+    # loop over nodes that are both infected and active (with prob. p_talk)
+    active <- runif(n_nodes) < p_talk
+    for (i in seq_len(n_nodes)[inf & active]) {
       # this returns the indices of the i-th row's non-zero elements
       # i.e. out-neighbors of node i
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
-      wgt <- adj_mat[i,, drop = FALSE]@x
+      a_mask <- active[nbs]
+      a_nbs <- nbs[a_mask]
+      wgt <- adj_mat[i,, drop = FALSE]@x[a_mask]
 
-      smask <- sus[nbs]
-      snbs <- nbs[smask]
+      s_mask <- sus[a_nbs]
+      s_nbs <- a_nbs[s_mask]
 
       # susceptible neighbors lose or gain doses with prob. = p_skep
-      doses[snbs, d_wind] <- doses[snbs, d_wind] +
-        (1 - 2 * (runif(sum(smask)) < p_skep)) * wgt[smask]
+      doses[s_nbs, d_wind] <- doses[s_nbs, d_wind] +
+        (1 - 2 * (runif(sum(s_mask)) < p_skep)) * wgt[s_mask]
       # current node (infected) loses doses for each neighbouring I or R
-      doses[i, d_wind] <- doses[i, d_wind] - sum(runif(sum(!smask)) < p_stop)
+      doses[i, d_wind] <- doses[i, d_wind] - sum(runif(sum(!s_mask)) < p_stop)
     }
 
     # update boolean vectors
@@ -234,13 +236,13 @@ rumour_skep <- function(
 ger <- sample_gnm(n = vcount(gcph), m = ecount(gcph))
 res_er <- rumour_skep(
   graph = ger, n_iters = 100, inf_0 = 1,
-  p_talk = 0.8, p_skep = 0.2, p_stop = 0.1,
-  d_wind = 7, thresh = 5,
+  p_talk = 0.8, p_skep = 0.2, p_stop = 0.2,
+  d_wind = 7, thresh = 2,
   seed = FALSE, display = TRUE
 )
 res_cph <- rumour_skep(
   graph = gcph, n_iters = 100, inf_0 = 1,
-  p_talk = 0.4, p_skep = 0.2, p_stop = 0.1,
-  d_wind = 7, thresh = 5,
+  p_talk = 0.6, p_skep = 0.2, p_stop = 0.2,
+  d_wind = 7, thresh = 2,
   seed = FALSE, display = TRUE
 )
