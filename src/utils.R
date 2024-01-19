@@ -47,3 +47,12 @@ ggsir <- function(n_inf, n_rec, n_sus) {
         colour = "Compartment"
       )
 }
+
+get_lcc <- function(graph, mode = "weak") {
+  # extract the largest connected component from an igraph network
+  components <- igraph::clusters(graph, mode = mode)
+  lcc_id <- which.max(components$csize)
+  lcc_verts <- igraph::V(graph)[components$membership == lcc_id]
+
+  return(igraph::induced_subgraph(graph, lcc_verts))
+}
