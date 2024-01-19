@@ -229,7 +229,10 @@ rumour_skep <- function(
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)
 
-  return(data.frame(sus = n_sus, inf = n_inf, rec = n_rec))
+  return(list(
+    sus = sus, rec = rec, inf = inf,
+    n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
+  ))
 }
 
 # null model
@@ -246,3 +249,15 @@ res_cph <- rumour_skep(
   d_wind = 7, thresh = 2,
   seed = FALSE, display = TRUE
 )
+
+k <- degree(gcph, mode = "out") |> unname()
+k_sr <- rbindlist(
+  lapply(c("sus", "rec"), \(x) data.frame(class = x, k = k[res_cph[[x]]]))
+)[, class := factor(class, c("sus", "rec"))]
+
+ggplot(k_sr, aes(k, fill = class)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    binwidth = 1, alpha = 0.5,
+    position = "identity", boundary = 0
+  )
