@@ -2,8 +2,7 @@ library(igraph)
 library(ggplot2)
 library(data.table)
 source("src/utils.R")
-source("src/rumour_rnd.R")
-source("src/rumour_skep.R")
+source("src/rumour_base.R")
 
 if (Sys.info()["sysname"] == "Darwin") {
   setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
@@ -44,10 +43,14 @@ clusters(gcph)  # only one cc, good
 
 # null model
 ger <- sample_gnm(n = vcount(gcph), m = ecount(gcph))
-res_er <- rumour_skep(
+res_er <- rumour_base(
   graph = ger, n_iters = 100, inf_0 = 1,
-  p_talk = 0.8, p_skep = 0.2, p_stop = 0.2,
-  d_wind = 7, thresh = 2,
+  p_skep = 0.5, spr_rate = 0.5, rec_rate = 0.5,
+  seed = FALSE, display = TRUE
+)
+res_cph <- rumour_base(
+  graph = gcph, n_iters = 100, inf_0 = 1,
+  p_skep = 0.5, spr_rate = 0.5, rec_rate = 0.5,
   seed = FALSE, display = TRUE
 )
 res_cph <- rumour_skep(

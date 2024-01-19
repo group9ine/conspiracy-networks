@@ -17,6 +17,7 @@ rumour_base <- function(
 
   sus <- rep(TRUE, n_nodes)
   inf <- rep(FALSE, n_nodes)
+  rec <- rep(FALSE, n_nodes)
   n_sus <- rep(0, n_iters)
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
