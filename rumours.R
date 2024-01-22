@@ -48,6 +48,7 @@ V(gcph)$name <- seq_len(vcount(gcph))  # normalize naming
 is_simple(gcph)
 clusters(gcph)  # only one cc, good
 
+k <- degree(gcph)
 c <- closeness(gcph)
 c_sc <- (c - min(c)) / (max(c) - min(c))
 n_cols <- 20
@@ -67,7 +68,7 @@ res_er <- rumour_base(
 )
 res_cph <- rumour_base(
   graph = gcph, n_iters = 100, inf_0 = 1,
-  p_skep = 0.2, spr_rate = 0.8, rec_rate = 0.2,
+  p_skep = 0.2, spr_rate = 0.8, rec_rate = 0.5,
   seed = FALSE, display = TRUE
 )
 gf <- make_full_graph(n = vcount(gcph))
@@ -90,7 +91,8 @@ ggplot(k_sr, aes(k, fill = class)) +
     position = "identity", boundary = 0
   )
 
-g <- make_graph("Zachary")
+# g <- make_graph("Zachary")
+g <- gcph
 
 n_sim <- 1000
 nodes <- V(g)
@@ -121,8 +123,8 @@ hist(freqs)
 cols <- viridis::plasma(n_cols + 1)[
   1 + floor(n_cols * (freqs - min(freqs)) / (max(freqs) - min(freqs)))]
 plot(
-  g, layout = layout_with_kk(g),
-  vertex.color = cols, vertex.size = 3 * degree(g)^0.4,
+  g, layout = layout_with_graphopt(g),
+  vertex.color = cols, vertex.size = 2 * degree(g)^0.3,
   vertex.label = NA, vertex.frame.color = NA
 )
 
