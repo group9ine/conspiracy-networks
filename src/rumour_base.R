@@ -9,10 +9,7 @@ rumour_base <- function(
   if (seed) set.seed(seed)
 
   # we need to access by row later, so convert to row-ordered sp. mat.
-  adj_mat <- as(
-    igraph::as_adj(graph, attr = if (is_weighted(graph)) "weight" else NULL),
-    "RsparseMatrix"
-  )
+  adj_mat <- as(igraph::as_adj(graph), "RsparseMatrix")
   n_nodes <- igraph::vcount(graph)
 
   sus <- rep(TRUE, n_nodes)
@@ -40,15 +37,16 @@ rumour_base <- function(
       # on this subset, select nodes that will recover with prob. p_skep
       r_mask <- runif(length(s_nbs)) < p_skep
 
+      # i can recover with probability rec_rate for each contact
+      # with an infected or recovered neighbour
+      is_ir <- any(runif(sum(inf[nbs]) + sum(rec[nbs])) < rec_rate)
+      inf[i] <- !is_ir
+      rec[i] <- is_ir
+
+      # update neighbours
       sus[s_nbs] <- FALSE
       rec[s_nbs[r_mask]] <- TRUE
       inf[s_nbs[!r_mask]] <- TRUE
-
-      # i can turn infected with probability rec_rate for each contact
-      # with an infected or recovered neighbour
-      is_rec <- any(runif(sum(inf[nbs]) + sum(rec[nbs])) < rec_rate)
-      inf[i] <- !is_rec
-      rec[i] <- is_rec
     }
 
     # update counter vectors
