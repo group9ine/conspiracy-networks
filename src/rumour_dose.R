@@ -8,17 +8,16 @@ rumour_dose <- function(
 ) {
   if (seed) set.seed(seed)
 
-  # we need to access by row later, so convert to row-ordered sp. mat.
-  adj_mat <- as(
-    igraph::as_adj(
-      graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
-    ),
-    "RsparseMatrix"
+  adj_mat <- igraph::as_adj(
+    graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
   )
   n_nodes <- igraph::vcount(graph)
   # "contact" rates: communication weight from i to j is renormalized
   # with the total communication weight of i
-  c_rates <- adj_mat / Matrix::rowSums(adj_mat)
+  adj_mat <- as(
+    adj_mat igraph::degree(graph) / Matrix::rowSums(adj_mat),
+    "RsparseMatrix"
+  )
 
   doses <- rep(0, n_nodes)
   inf <- rep(FALSE, n_nodes)
@@ -44,7 +43,7 @@ rumour_dose <- function(
       # this returns the indices of the i-th row's non-zero elements
       # i.e. out-neighbors of node i
       nbs <- adj_mat[i,, drop = FALSE]@j + 1
-      crt <- c_rates[i,, drop = FALSE]@x
+      crt <- adj_mat[i,, drop = FALSE]@x
       s_mask <- sus[nbs]  # mask for every sus neighbour
 
       # i can lose dose with probability rec_rate * c_rate for each contact
