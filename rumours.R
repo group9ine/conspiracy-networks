@@ -3,6 +3,7 @@ library(ggplot2)
 library(data.table)
 source("src/utils.R")
 source("src/rumour_base.R")
+source("src/rumour_dose.R")
 
 if (Sys.info()["sysname"] == "Darwin") {
   setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
@@ -67,8 +68,8 @@ res_er <- rumour_base(
   seed = FALSE, display = TRUE
 )
 res_cph <- rumour_base(
-  graph = gcph, n_iters = 100, inf_0 = 1,
-  p_skep = 0.2, spr_rate = 0.8, rec_rate = 0.5,
+  graph = gcph, n_iters = 1000, inf_0 = 3,
+  p_skep = 0.05, spr_rate = 0.3, rec_rate = 0.1, #thresh = 2,
   seed = FALSE, display = TRUE
 )
 gf <- make_full_graph(n = vcount(gcph))
