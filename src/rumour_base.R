@@ -19,10 +19,14 @@ rumour_base <- function(
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
 
+  reached <- rep(FALSE, n_nodes)
+  dir_rec <- rep(FALSE, n_nodes)
+
   # pick a node randomly and infect it
   pick <- sample.int(n_nodes, inf_0, replace = FALSE)
   sus[pick] <- FALSE
   inf[pick] <- TRUE
+  reached[pick] <- TRUE
 
   tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
@@ -39,20 +43,24 @@ rumour_base <- function(
 
       # i can recover with probability rec_rate for each contact
       # with an infected or recovered neighbour
-      is_ir <- any(runif(sum(inf[nbs]) + sum(rec[nbs])) < rec_rate)
-      inf[i] <- !is_ir
-      rec[i] <- is_ir
+      is_rec <- any(runif(sum(inf[nbs]) + sum(rec[nbs])) < rec_rate)
+      inf[i] <- !is_rec
+      rec[i] <- is_rec
 
       # update neighbours
       sus[s_nbs] <- FALSE
       rec[s_nbs[r_mask]] <- TRUE
       inf[s_nbs[!r_mask]] <- TRUE
+
+      dir_rec[s_nbs[r_mask]] <- TRUE
     }
+
 
     # update counter vectors
     n_sus[t] <- sum(sus)
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
+    reached <- reached | inf
 
     if (t > 30 && sd(n_inf[(t - 30):t]) < tol) {
       n_sus <- n_sus[1:t]
@@ -72,7 +80,8 @@ rumour_base <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, sus = sus, rec = rec, inf = inf,
+    start = pick, reached = reached, dir_rec = dir_rec,
+    sus = sus, rec = rec, inf = inf,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }
