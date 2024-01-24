@@ -8,14 +8,11 @@ rumour_dose <- function(
 ) {
   if (seed) set.seed(seed)
 
-  adj_mat <- igraph::as_adj(
-    graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
-  )
   n_nodes <- igraph::vcount(graph)
-  # "contact" rates: communication weight from i to j is renormalized
-  # with the total communication weight of i
   adj_mat <- as(
-    adj_mat * igraph::degree(graph) / Matrix::rowSums(adj_mat),
+    igraph::as_adj(
+      graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
+    ),
     "RsparseMatrix"
   )
 
@@ -36,7 +33,6 @@ rumour_dose <- function(
   sus <- !(inf | rec)
   reached <- inf
 
-  tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     # loop over infected nodes
     for (i in seq_len(n_nodes)[inf]) {
@@ -73,7 +69,7 @@ rumour_dose <- function(
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
 
-    if (t > 30 && sd(n_inf[(t - 30):t]) < tol) {
+    if (n_inf[t] == 0) {
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
       n_rec <- n_rec[1:t]
@@ -94,8 +90,8 @@ rumour_dose <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, reached = reached, dir_rec = dir_rec, doses = doses,
-    sus = sus, rec = rec, inf = inf,
+    start = pick, reached = reached, dir_rec = dir_rec,
+    doses = doses, sus = sus, rec = rec,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }

@@ -40,7 +40,8 @@ df <- fread("data/copenhagen/fb_friends.csv", col.names = c("a", "b"))
 # without facebook
 dcph <- merge(dc, ds, all = TRUE)[
   is.na(N.x), N.x := 0][is.na(N.y), N.y := 0][
-    , .(a, b, weight = 1 + log(N.x + N.y))]
+    , .(a, b, weight = 1 + log(N.x + N.y))][
+      , weight := weight / max(weight)]
 
 gcph <- graph_from_data_frame(dcph, directed = FALSE) |>
   simplify() |>
@@ -56,7 +57,7 @@ n_cols <- 20
 V(gcph)$color <- viridis::plasma(n_cols + 1)[1 + floor(n_cols * c_sc)]
 plot(
   gcph, layout = layout_with_graphopt(gcph),
-  edge.width = 0.5 * E(gcph)$weight,
+  edge.width = 0.5 * E(gcph)$weight / min(E(gcph)$weight),
   vertex.size = 2 * k^0.3, vertex.label = NA, vertex.frame.color = NA
 )
 
@@ -67,9 +68,9 @@ res_er <- rumour_base(
   p_skep = 0.5, spr_rate = 0.5, rec_rate = 0.5,
   seed = FALSE, display = TRUE
 )
-res_cph <- rumour_base(
-  graph = gcph, n_iters = 1000, inf_0 = 3,
-  p_skep = 0.05, spr_rate = 0.3, rec_rate = 0.1, #thresh = 2,
+res_cph <- rumour_dose(
+  graph = gcph, n_iters = 1e4, inf_0 = 1,
+  p_skep = 0.15, spr_rate = 0.7, rec_rate = 0.1, thresh = 5,
   seed = FALSE, display = TRUE
 )
 gf <- make_full_graph(n = vcount(gcph))

@@ -8,15 +8,11 @@ rumour_base <- function(
 ) {
   if (seed) set.seed(seed)
 
-  adj_mat <- igraph::as_adj(
-    graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
-  )
   n_nodes <- igraph::vcount(graph)
-  # "contact" rates: communication weight from i to j is renormalized
-  # with the total communication weight of i
-  # we need to access by row later, so convert to row-ordered sp. mat.
   adj_mat <- as(
-    adj_mat * igraph::degree(graph) / Matrix::rowSums(adj_mat),
+    igraph::as_adj(
+      graph, attr = if (igraph::is_weighted(graph)) "weight" else NULL
+    ),
     "RsparseMatrix"
   )
 
@@ -37,9 +33,10 @@ rumour_base <- function(
   sus <- !(inf | rec)
   reached <- inf
 
-  tol <- 1e-3 * n_nodes  # for the stopping condition
   for (t in seq_len(n_iters)) {
     # loop over infected nodes
+    new_inf <- rep(FALSE, n_nodes)
+    new_rec <- rep(FALSE, n_nodes)
     for (i in seq_len(n_nodes)[inf]) {
       # this returns the indices of the i-th row's non-zero elements
       # i.e. out-neighbors of node i
@@ -50,8 +47,8 @@ rumour_base <- function(
       # i can recover with probability rec_rate * c_rate for each contact
       # with an infected or recovered neighbour
       is_rec <- any(runif(sum(!s_mask)) < rec_rate * crt[!s_mask])
-      inf[i] <- !is_rec
-      rec[i] <- is_rec
+      new_inf[i] <- !is_rec
+      new_rec[i] <- is_rec
 
       # subset the sus neighbors with probability spr_rate * c_rate
       s_nbs <- nbs[s_mask][runif(sum(s_mask)) < spr_rate * crt[s_mask]]
@@ -59,20 +56,23 @@ rumour_base <- function(
       r_mask <- runif(length(s_nbs)) < p_skep
 
       # update neighbours
-      sus[s_nbs] <- FALSE
-      rec[s_nbs[r_mask]] <- TRUE
-      inf[s_nbs[!r_mask]] <- TRUE
+      new_rec[s_nbs[r_mask]] <- TRUE
+      new_inf[s_nbs[!r_mask]] <- TRUE
 
       dir_rec[s_nbs[r_mask]] <- TRUE
     }
+
+    sus <- sus & !(new_rec | new_inf)
+    inf <- (inf & !new_rec) | new_inf
+    rec <- rec | new_rec
+    reached <- reached | inf
 
     # update counter vectors
     n_sus[t] <- sum(sus)
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
-    reached <- reached | inf
 
-    if (t > 30 && sd(n_inf[(t - 30):t]) < tol) {
+    if (n_inf[t] == 0) {
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
       n_rec <- n_rec[1:t]
@@ -90,8 +90,8 @@ rumour_base <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, reached = reached, dir_rec = dir_rec,
-    sus = sus, rec = rec, inf = inf,
+    start = pick, reached = reached,
+    dir_rec = dir_rec, sus = sus, rec = rec,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }
