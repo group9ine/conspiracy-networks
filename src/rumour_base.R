@@ -90,7 +90,7 @@ rumour_base <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, reached = reached,
+    start = pick, duration = t, reached = reached,
     dir_rec = dir_rec, sus = sus, rec = rec,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
