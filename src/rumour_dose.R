@@ -15,7 +15,7 @@ rumour_dose <- function(
   # "contact" rates: communication weight from i to j is renormalized
   # with the total communication weight of i
   adj_mat <- as(
-    adj_mat igraph::degree(graph) / Matrix::rowSums(adj_mat),
+    adj_mat * igraph::degree(graph) / Matrix::rowSums(adj_mat),
     "RsparseMatrix"
   )
 
