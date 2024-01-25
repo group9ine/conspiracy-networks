@@ -125,7 +125,7 @@ results <- mclapply(
 str(results)
 dput(results, "simulations/base.txt")
 
-
+sttime <- system.time()
 # previous code
 results <- outer(
   # spr_rate vector
@@ -140,5 +140,8 @@ results <- outer(
 dim(results) <- NULL # convert to list
 # write to file
 dput(results, "base.txt") # or "dose.txt"
+
+fstime <- system.time()
+(elapsed<-sttime-fstime)
 # read back with
 # res <- dget("out.txt")
