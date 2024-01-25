@@ -42,7 +42,7 @@ get_results <- function(spr, rec, func, n_sim = 100) {
       } else {
         rumour_dose(
           graph = g, n_iters = 1e4, inf_0 = 1,
-          p_skep = 0, spr_rate = spr, rec_rate = rec, thresh = 2,
+          p_skep = 0, spr_rate = spr, rec_rate = rec, thresh = 5,
           seed = FALSE, display = FALSE
         )
       }
@@ -72,55 +72,63 @@ get_results <- function(spr, rec, func, n_sim = 100) {
 ###################
 
 detectCores()
-n_cores <- 4
+n_cores <- 3
 
-spr_rates <- c(0.3, 0.7, 0.9)
-rec_rates <- c(0.1, 0.2, 0.3)
+spr_rates <- seq(0.1, 1, 0.1)
+rec_rates <- seq(0.1, 1, 0.1)
 rates <- expand.grid(spr = spr_rates, rec = rec_rates) |>
   transpose()
 setnames(rates, as.character(1:ncol(rates)))
 
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
+  st_time <- Sys.time()
   results <- mclapply(
-    rates, \(x) get_results(x[1], x[2], func = "dose", n_sim = 5),
-    mc.cores = n_cores
+    rates, \(x) get_results(x[1], x[2], func = "dose", n_sim = 500),
+    mc.cores = n_cores,
+    mc.preschedule = FALSE
   )
+  fs_time <- Sys.time()
 } else {
   cluster <- makeCluster(n_cores)
   clusterExport(
     cluster, c("get_results", "rumour_base", "rumour_dose", "rates", "g")
   )
+  st_time <- Sys.time()
   results <- parLapplyLB(
     cluster, rates,
     \(x) get_results(x[1], x[2], func = "dose", n_sim = 5)
   )
+  fs_time <- Sys.time()
   stopCluster(cluster)
 }
 
+fs_time - st_time
+
 str(results)
 dput(results, "simulations/dose.txt")
+
 
 ##################
 # SERIAL VERSION #
 ##################
 
-spr_rates <- c(0.3, 0.7, 0.9)
-rec_rates <- c(0.1, 0.2, 0.3)
+spr_rates <- c(0.5, 0.6)
+rec_rates <- c(0.5, 0.6)
 
-sttime <- Sys.time()
+st_time <- Sys.time()
 results <- outer(
   # spr_rate vector
   spr_rates,
   # rec_rate vector
   rec_rates,
   Vectorize(
-    \(s, r) get_results(s, r, func = "dose", n_sim = 5),
+    \(s, r) get_results(s, r, func = "dose", n_sim = 500),
     SIMPLIFY = FALSE
   )
 )
 dim(results) <- NULL # convert to list
-fstime <- Sys.time()
-(elapsed <- sttime - fstime)
+fs_time <- Sys.time()
+fs_time - st_time
 
 # write to file
 dput(results, "base.txt") # or "dose.txt"
