@@ -82,7 +82,7 @@ setnames(rates, as.character(1:ncol(rates)))
 
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   results <- mclapply(
-    rates, \(x) get_results(x[1], x[2], func = "base", n_sim = 5),
+    rates, \(x) get_results(x[1], x[2], func = "dose", n_sim = 5),
     mc.cores = n_cores
   )
 } else {
@@ -90,7 +90,7 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   clusterExport(
     cluster, c("get_results", "rumour_base", "rumour_dose", "rates", "g")
   )
-  results <- parLapply(
+  results <- parLapplyLB(
     cluster, rates,
     \(x) get_results(x[1], x[2], func = "dose", n_sim = 5)
   )
@@ -114,7 +114,7 @@ results <- outer(
   # rec_rate vector
   rec_rates,
   Vectorize(
-    \(s, r) get_results(s, r, func = "base", n_sim = 10),
+    \(s, r) get_results(s, r, func = "dose", n_sim = 5),
     SIMPLIFY = FALSE
   )
 )
