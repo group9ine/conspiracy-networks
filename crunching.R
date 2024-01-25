@@ -79,7 +79,6 @@ rec_rates <- c(0.1, 0.2, 0.3)
 rates <- expand.grid(spr = spr_rates, rec = rec_rates) |>
   transpose()
 setnames(rates, as.character(1:ncol(rates)))
-microbenchmark(
 
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   results <- mclapply(
