@@ -101,13 +101,14 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 str(results)
 dput(results, "simulations/dose.txt")
 
-
 ##################
 # SERIAL VERSION #
 ##################
 
 spr_rates <- c(0.3, 0.7, 0.9)
 rec_rates <- c(0.1, 0.2, 0.3)
+
+sttime <- Sys.time()
 results <- outer(
   # spr_rate vector
   spr_rates,
@@ -119,6 +120,9 @@ results <- outer(
   )
 )
 dim(results) <- NULL # convert to list
+fstime <- Sys.time()
+(elapsed <- sttime - fstime)
+
 # write to file
 dput(results, "base.txt") # or "dose.txt"
 # read back with
