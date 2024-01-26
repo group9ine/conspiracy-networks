@@ -11,19 +11,19 @@ if (Sys.info()["sysname"] == "Darwin") {
 
 g <- read_graph("data/graph_cph.graphml", format = "graphml")
 
-get_results <- function(psk, spr, rec, func, n_sim = 100) {
+get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
   res <- lapply(
     seq_len(n_sim),
     function(i) {
       if (func == "base") {
         rumour_base(
-          graph = g, n_iters = 1e4, inf_0 = 1,
+          graph = g, n_iters = 1e4, inf_0 = start,
           p_skep = psk, spr_rate = spr, rec_rate = rec,
           seed = FALSE, display = FALSE
         )
       } else {
         rumour_dose(
-          graph = g, n_iters = 1e4, inf_0 = 1,
+          graph = g, n_iters = 1e4, inf_0 = start,
           p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5,
           seed = FALSE, display = FALSE
         )
@@ -56,7 +56,7 @@ setnames(rates, as.character(1:ncol(rates)))
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
-    rates, \(x) get_results(0, x[1], x[2], func = "dose", n_sim = 500),
+    rates, \(x) get_results(0, 0, x[1], x[2], func = "dose", n_sim = 500),
     mc.cores = n_cores,
     mc.preschedule = FALSE
   )
@@ -69,7 +69,7 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- parLapplyLB(
     cluster, rates,
-    \(x) get_results(0, x[1], x[2], func = "dose", n_sim = 5)
+    \(x) get_results(0, 0, x[1], x[2], func = "dose", n_sim = 500)
   )
   fs_time <- Sys.time()
   stopCluster(cluster)
@@ -95,7 +95,7 @@ results <- outer(
   # rec_rate vector
   rec_rates,
   Vectorize(
-    \(s, r) get_results(0, s, r, func = "dose", n_sim = 500),
+    \(s, r) get_results(0, 0, s, r, func = "dose", n_sim = 500),
     SIMPLIFY = FALSE
   )
 )
@@ -114,7 +114,7 @@ dput(results, "base.txt") # or "dose.txt"
 
 # let's choose spr = 0.85, rec = 0.15
 res <- rumour_dose(
-  graph = g, n_iters = 1e4, inf_0 = 1,
+  graph = g, n_iters = 1e4, inf_0 = 0,
   p_skep = 0, spr_rate = 0.85, rec_rate = 0.15, thresh = 5,
   seed = FALSE, display = TRUE
 )
@@ -125,7 +125,10 @@ p_skep <- seq(0.05, 0.95, 0.05)
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
-    p_skep, \(x) get_results(x, 0.85, 0.15, func = "base", n_sim = 1000),
+    p_skep, \(x) get_results(
+      start = 0, psk = x, spr = 0.85, rec = 0.15,
+      func = "base", n_sim = 1000
+    ),
     mc.cores = n_cores,
     mc.preschedule = FALSE
   )
@@ -137,8 +140,10 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
-    cluster, p_skep,
-    \(x) get_results(x, 0.85, 0.15, func = "base", n_sim = 1000)
+    cluster, p_skep, \(x) get_results(
+      start = 0, psk = x, spr = 0.85, rec = 0.15,
+      func = "base", n_sim = 1000
+    )
   )
   fs_time <- Sys.time()
   stopCluster(cluster)
@@ -146,9 +151,52 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 
 res_dt <- rbindlist(results)
 setcolorder(
-  res_dt,
-  c("psk", "spr", "rec", "start", "duration",
-    "att_rate", "max_inf", "when_inf", "reached", "dir_rec")
+  res_dt, c(
+    "psk", "spr", "rec", "start", "duration",
+    "att_rate", "max_inf", "when_inf", "reached", "dir_rec"
+  )
 )
 
 # fwrite(res_dt, "out/skeptics.csv")
+
+################
+# NODE BY NODE #
+################
+
+st_node <- 1:vcount(g)
+if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
+  st_time <- Sys.time()
+  results <- mclapply(
+    st_node, \(x) get_results(
+      start = x, psk = 0.5, spr = 0.85, rec = 0.15,
+      func = "base", n_sim = 10
+    ),
+    mc.cores = n_cores,
+    mc.preschedule = FALSE
+  )
+  fs_time <- Sys.time()
+} else {
+  cluster <- makeCluster(n_cores)
+  clusterExport(
+    cluster, c("get_results", "rumour_base", "rumour_dose", "rates", "g")
+  )
+  st_time <- Sys.time()
+  results <- parLapplyLB(
+    cluster, p_skep, \(x) get_results(
+      start = x, psk = 0.5, spr = 0.85, rec = 0.15,
+      func = "base", n_sim = 1000
+    )
+  )
+  fs_time <- Sys.time()
+  stopCluster(cluster)
+}
+
+res_dt <- rbindlist(results)
+setcolorder(
+  res_dt, c(
+    "psk", "spr", "rec", "start", "duration",
+    "att_rate", "max_inf", "when_inf", "reached", "dir_rec"
+  )
+)
+
+# fwrite(res_dt, "out/node_by_node.csv")
