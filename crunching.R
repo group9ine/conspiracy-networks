@@ -157,7 +157,20 @@ setcolorder(
   )
 )
 
-# fwrite(res_dt, "out/skeptics.csv")
+# fwrite(res_dt, "out/base_skeptics.csv")
+
+# res_dt <- fread("out/base_skeptics.csv")
+# chr_to_bool <- \(x) 1L * as.logical(tstrsplit(x, "|", fixed = TRUE))
+# chr_to_int <- \(x) as.integer(tstrsplit(x, "|", fixed = TRUE))
+# res_dt[, `:=`(reached = lapply(reached, chr_to_bool),
+#               dir_rec = lapply(dir_rec, chr_to_bool),
+#               when_inf = lapply(when_inf, chr_to_int))]
+# fwrite(res_dt, "out/base_skeptics.csv")
+
+# res_dt <- fread("out/base_skeptics.csv")
+# chr_to_int <- \(x) as.integer(tstrsplit(x, "|", fixed = TRUE))
+# cols <- c("reached", "dir_rec", "when_inf")
+# res_dt[, (cols) := lapply(.SD, \(x) lapply(x, chr_to_int)), .SDcols = cols]
 
 ################
 # NODE BY NODE #
