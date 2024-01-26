@@ -141,3 +141,40 @@ plot(
   vertex.color = cols, vertex.size = 3,
   vertex.label = NA, vertex.frame.color = NA
 )
+
+############
+# SKEPTICS #
+############
+
+base_sk <- fread("out/base_skeptics.csv")
+chr_to_int <- \(x) as.integer(unlist(strsplit(x, "|", fixed = TRUE)))
+conv <- c("reached", "dir_rec", "when_inf")
+base_sk[, (conv) := lapply(.SD, \(x) lapply(x, chr_to_int)), .SDcols = conv][
+  , `:=`(att_rate = att_rate / vcount(g),
+         n_dir = sapply(dir_rec, sum) / vcount(g))]
+
+base_sk[, .(att = mean(att_rate), sd = sd(att_rate)), by = psk] |>
+  ggplot(aes(psk, att)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = att - sd, ymax = att + sd), alpha = 0.5)
+
+base_sk[, .(dur = mean(duration), sd = sd(duration)), by = psk] |>
+  ggplot(aes(psk, dur)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = dur - sd, ymax = dur + sd), alpha = 0.5)
+
+# fuorviante
+base_sk[, .(dir = mean(n_dir), sd = sd(n_dir)), by = psk] |>
+  ggplot(aes(psk, dir)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = dir - sd, ymax = dir + sd), alpha = 0.5)
+
+ggplot(base_sk, aes(factor(psk), n_dir)) +
+  geom_boxplot()  # ?????????
+
+base_sk[psk == 0.2, n_dir] |> hist()  # ???????
+
+base_sk[, .(minf = mean(max_inf), sd = sd(max_inf)), by = psk] |>
+  ggplot(aes(psk, minf)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = minf - sd, ymax = minf + sd), alpha = 0.5)
