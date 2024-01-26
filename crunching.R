@@ -9,25 +9,7 @@ if (Sys.info()["sysname"] == "Darwin") {
   setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
 }
 
-calls <- fread(
-  "data/copenhagen/calls.csv",
-  col.names = c("time", "from", "to", "duration")
-)[duration > 0, .N, keyby = .(a = pmin(from, to), b = pmax(from, to))]
-
-sms <- fread(
-  "data/copenhagen/sms.csv",
-  col.names = c("time", "from", "to")
-)[, .N, keyby = .(a = pmin(from, to), b = pmax(from, to))]
-
-cph <- merge(calls, sms, all = TRUE)[
-  is.na(N.x), N.x := 0][is.na(N.y), N.y := 0][
-    , .(a, b, weight = 1 + log(N.x + N.y))][
-      , weight := weight / max(weight)]
-
-g <- graph_from_data_frame(cph, directed = FALSE) |>
-  get_lcc() |>
-  simplify()
-V(g)$name <- seq_len(vcount(g))
+g <- read_graph("data/graph_cph.graphml", format = "graphml")
 
 get_results <- function(spr, rec, func, n_sim = 100) {
   res <- lapply(
@@ -134,3 +116,7 @@ fs_time - st_time
 dput(results, "base.txt") # or "dose.txt"
 # read back with
 # res <- dget("out.txt")
+
+#######################
+# SKEPTICISM ANALYSIS #
+#######################
