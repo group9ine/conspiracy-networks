@@ -27,7 +27,7 @@ rumour_base <- function(
   dir_rec <- rep(FALSE, n_nodes)
 
   # pick a node randomly and infect it
-  pick <- sample.int(n_nodes, inf_0, replace = FALSE)
+  pick <- if (inf_0) inf_0 else sample.int(n_nodes, inf_0, replace = FALSE)
   inf[pick] <- TRUE
   reached[pick] <- TRUE
   when_inf[pick] <- 0
