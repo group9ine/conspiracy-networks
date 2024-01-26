@@ -78,7 +78,7 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 fs_time - st_time
 
 str(results)
-dput(results, "simulations/dose.txt")
+# dput(results, "simulations/dose.txt")
 
 
 ##################
@@ -104,7 +104,7 @@ fs_time <- Sys.time()
 fs_time - st_time
 
 # write to file
-dput(results, "base.txt") # or "dose.txt"
+# dput(results, "base.txt") # or "dose.txt"
 # read back with
 # res <- dget("out.txt")
 
@@ -136,7 +136,7 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 } else {
   cluster <- makeCluster(n_cores)
   clusterExport(
-    cluster, c("get_results", "rumour_base", "rumour_dose", "rates", "g")
+    cluster, c("get_results", "rumour_base", "rumour_dose", "p_skep", "g")
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
@@ -178,11 +178,11 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 } else {
   cluster <- makeCluster(n_cores)
   clusterExport(
-    cluster, c("get_results", "rumour_base", "rumour_dose", "rates", "g")
+    cluster, c("get_results", "rumour_base", "rumour_dose", "st_node", "g")
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
-    cluster, p_skep, \(x) get_results(
+    cluster, st_node, \(x) get_results(
       start = x, psk = 0.5, spr = 0.85, rec = 0.15,
       func = "base", n_sim = 1000
     )
