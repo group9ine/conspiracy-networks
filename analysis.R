@@ -1,6 +1,5 @@
 library(igraph)
 library(ggplot2)
-library(ggridges)
 library(data.table)
 source("src/utils.R")
 source("src/rumour_base.R")
@@ -128,7 +127,7 @@ dose_bc <- dose_cor[cor == max(cor), .(spr = spr_rate, rec = rec_rate)]
 
 res <- rumour_dose(
   graph = g, n_iters = 1e4, inf_0 = 1,
-  p_skep = 0, spr_rate = 0.45, rec_rate = 0.35, thresh = 5,
+  p_skep = 0, spr_rate = 0.8, rec_rate = 0.2, thresh = 5,
   seed = FALSE, display = TRUE
 )
 V(g)$state <- ifelse(res$sus, "sus", "rec")
