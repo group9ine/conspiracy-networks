@@ -23,15 +23,17 @@ rumour_dose <- function(
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
 
+  when_inf <- rep(-1, n_nodes)
   reached <- rep(FALSE, n_nodes)
   dir_rec <- rep(TRUE, n_nodes)
 
   pick <- sample.int(n_nodes, inf_0, replace = FALSE)
   inf[pick] <- TRUE
+  reached[pick] <- TRUE
   doses[pick] <- thresh
+  when_inf[pick] <- 0
 
   sus <- !(inf | rec)
-  reached <- inf
 
   for (t in seq_len(n_iters)) {
     # loop over infected nodes
@@ -60,6 +62,7 @@ rumour_dose <- function(
     inf <- (inf & !under) | (!rec & over)
     rec <- rec | under
     sus <- !(inf | rec)
+    when_inf[!reached & inf] <- t
     reached <- reached | inf
     # dir_rec starts from all T, goes F where a node goes above the thr.
     dir_rec <- dir_rec & !over
@@ -90,7 +93,7 @@ rumour_dose <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, duration = t,
+    start = pick, duration = t, when_inf = when_inf,
     reached = reached, dir_rec = dir_rec,
     doses = doses, sus = sus, rec = rec,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec

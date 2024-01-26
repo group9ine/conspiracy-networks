@@ -22,6 +22,7 @@ rumour_base <- function(
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
 
+  when_inf <- rep(-1, n_nodes)
   reached <- rep(FALSE, n_nodes)
   dir_rec <- rep(FALSE, n_nodes)
 
@@ -29,9 +30,9 @@ rumour_base <- function(
   pick <- sample.int(n_nodes, inf_0, replace = FALSE)
   inf[pick] <- TRUE
   reached[pick] <- TRUE
+  when_inf[pick] <- 0
 
   sus <- !(inf | rec)
-  reached <- inf
 
   for (t in seq_len(n_iters)) {
     # loop over infected nodes
@@ -62,9 +63,10 @@ rumour_base <- function(
       dir_rec[s_nbs[r_mask]] <- TRUE
     }
 
-    sus <- sus & !(new_rec | new_inf)
     inf <- (inf & !new_rec) | new_inf
     rec <- rec | new_rec
+    sus <- !(inf | rec)
+    when_inf[!reached & inf] <- t
     reached <- reached | inf
 
     # update counter vectors
@@ -90,7 +92,8 @@ rumour_base <- function(
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
-    start = pick, duration = t, reached = reached,
+    start = pick, duration = t,
+    when_inf = when_inf, reached = reached,
     dir_rec = dir_rec, sus = sus, rec = rec,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
