@@ -1,5 +1,14 @@
 library(igraph)
+library(ggplot2)
+library(ggridges)
 library(data.table)
+source("src/utils.R")
+source("src/rumour_base.R")
+source("src/rumour_dose.R")
+
+if (Sys.info()["sysname"] == "Darwin") {
+  setwd("/Users/lorenzobarbiero/Documents/GitHub/conspiracy-networks/")
+}
 
 base1 <- dget("out/base_011.txt") |>
   lapply(t) |>
@@ -34,3 +43,89 @@ setcolorder(dose, c(5, 6, 1:4))
 setorder(dose, spr_rate, rec_rate)
 
 fwrite(dose, "out/dose.csv")
+
+############
+# ANALYSIS #
+############
+
+base5 <- base[grep(".[0-9]5$", spr_rate)][grep(".[0-9]5$", rec_rate)] 
+dose5 <- dose[grep(".[0-9]5$", spr_rate)][grep(".[0-9]5$", rec_rate)] 
+
+base5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = att_rate)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+dose5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = att_rate)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+base5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = log10(duration))) +
+    scale_fill_viridis_c() +
+    geom_tile()
+    
+base[rec_rate == 0.05] |>
+  ggplot(aes(spr_rate, duration)) +
+    geom_point()
+
+dose5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = log10(duration))) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+dose[rec_rate == 0.15] |>
+  ggplot(aes(spr_rate, duration)) +
+    geom_line()
+
+base5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = max_inf)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+dose5 |>
+  ggplot(aes(spr_rate, rec_rate, fill = max_inf)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+g <- read_graph("data/graph_cph.graphml", format = "graphml")
+k <- unname(degree(g))
+
+plot(k, dose[spr_rate == 0.25 & rec_rate == 0.05, 500 * unlist(reached)])
+
+dose[spr_rate == 0.25 & rec_rate == 0.05,
+     .(deg = degree(g), reached = unlist(reached))][
+     , .(reached = median(reached), sd = sd(reached)), keyby = deg] |>
+  ggplot(aes(deg, reached)) +
+    geom_point()
+
+dose[spr_rate == 0.25 & rec_rate == 0.05]
+
+base5[, .(cor = cor(unlist(reached), k)), keyby = .(spr_rate, rec_rate)] |>
+  ggplot(aes(spr_rate, rec_rate, fill = cor)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+dose5[, .(cor = cor(unlist(reached), k)), keyby = .(spr_rate, rec_rate)] |>
+  ggplot(aes(spr_rate, rec_rate, fill = cor)) +
+    scale_fill_viridis_c() +
+    geom_tile()
+
+base_cor <- base[, .(cor = cor(unlist(reached), k)),
+                 keyby = .(spr_rate, rec_rate)]
+dose_cor <- dose[, .(cor = cor(unlist(reached), k)),
+                 keyby = .(spr_rate, rec_rate)]
+
+dose_cor[, .(rec_rate = rec_rate[which.max(cor)], cor = max(cor)),
+         by = spr_rate] |>
+  ggplot(aes(spr_rate, rec_rate)) + geom_point()
+
+base_cor[cor == max(cor)]
+dose_cor[cor == max(cor)]
+
+rumour_dose(
+  graph = g, n_iters = 1e4, inf_0 = 1,
+  p_skep = 0, spr_rate = 0.25, rec_rate = 0.05, thresh = 5,
+  seed = FALSE, display = TRUE
+)
