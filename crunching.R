@@ -34,9 +34,14 @@ get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
   res_dt <- lapply(res, \(x) t(x[cols])) |>
     do.call(rbind, args = _) |>
     as.data.table()
-  res_dt[, (cols[1:2]) := lapply(.SD, unlist), .SDcols = cols[1:2]][
-    , `:=`(psk = psk, spr = spr, rec = rec, att_rate = sapply(reached, sum))]
-  res_dt$max_inf <- sapply(res, \(x) max(x$n_inf))
+  res_dt[
+    , `:=`(start = lapply(start, \(x) unlist(x, FALSE, FALSE)),
+           duration = lapply(duration, \(x) unlist(x, FALSE, FALSE)),
+           reached = lapply(reached, \(x) 1L * x),
+           dir_rec = lapply(dir_rec, \(x) 1L * x))][
+    , `:=`(psk = psk, spr = spr, rec = rec,
+           att_rate = unlist(lapply(reached, sum), FALSE, FALSE))]
+  res_dt$max_inf <- unlist(lapply(res, \(x) max(x$n_inf)), FALSE, FALSE)
   return(res_dt)
 }
 
