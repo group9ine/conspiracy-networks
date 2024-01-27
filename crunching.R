@@ -45,6 +45,28 @@ get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
   return(res_dt)
 }
 
+get_evolution <- function(start, psk, spr, rec, func, n_sim = 100) {
+  res <- lapply(
+    seq_len(n_sim),
+    function(i) {
+      if (func == "base") {
+        rumour_base(
+          graph = g, n_iters = 1e4, inf_0 = start,
+          p_skep = psk, spr_rate = spr, rec_rate = rec,
+          seed = FALSE, display = FALSE
+        )
+      } else {
+        rumour_dose(
+          graph = g, n_iters = 1e4, inf_0 = start,
+          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5,
+          seed = FALSE, display = FALSE
+        )
+      }
+    }
+  )
+  return(res[c("n_sus", "n_inf", "n_rec")])
+}
+
 ###################
 # PARALLELIZATION #
 ###################
@@ -218,3 +240,26 @@ setcolorder(
 )
 
 # fwrite(res_dt, "out/node_by_node.csv")
+
+######################
+# OUTBREAK EVOLUTION #
+######################
+
+func <- "base"
+start <- 0
+psk <- 0.5
+spr <- 0.85
+rec <- 0.15
+iters <- 1000
+
+st_time <- Sys.time()
+results <- get_evolution(start, psk, spr, rec, func, iters)
+fs_time <- Sys.time()
+
+fs_time - st_time
+str(results)
+
+dput(
+  results,
+  sprintf("simulations/%s_%i_%g_%g_%g.txt", func, start, psk, spr, rec)
+)
