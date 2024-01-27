@@ -147,11 +147,23 @@ plot(
 ############
 
 base_sk <- fread("out/base_skeptics.csv")
-chr_to_int <- \(x) as.integer(unlist(strsplit(x, "|", fixed = TRUE)))
+chr_to_int <- \(x) as.integer(
+  unlist(
+    strsplit(x, "|", fixed = TRUE),
+    recursive = FALSE,
+    use.names = FALSE
+  )
+)
 conv <- c("reached", "dir_rec", "when_inf")
 base_sk[, (conv) := lapply(.SD, \(x) lapply(x, chr_to_int)), .SDcols = conv][
   , `:=`(att_rate = att_rate / vcount(g),
          n_dir = sapply(dir_rec, sum) / vcount(g))]
+
+# se preferite tidyverse
+# library(tidyverse)
+# library(igraph)  # questo va caricato dopo per via dei conflitti
+# 
+# base_sk <- as_tibble(base_sk)
 
 base_sk[, .(att = mean(att_rate), sd = sd(att_rate)), by = psk] |>
   ggplot(aes(psk, att)) +
