@@ -16,9 +16,11 @@ rumour_dose <- function(
     ),
     "RsparseMatrix"
   )
+  k <- igraph::degree(graph, mode = "out")
 
   if (save_plots) {
-    vsize <- 2 * degree(graph, mode = "out")^0.3
+    cols <- rep("#22223b", n_nodes)
+    vsize <- 2 * k^0.3
     ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
   }
 
@@ -28,12 +30,13 @@ rumour_dose <- function(
   n_sus <- rep(0, n_iters)
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
+  k_inf <- rep(0, n_iters)
 
   when_inf <- rep(-1, n_nodes)
   reached <- rep(FALSE, n_nodes)
   dir_rec <- rep(TRUE, n_nodes)
 
-  pick <- if (inf_0) inf_0 else sample.int(n_nodes, 1, replace = FALSE)
+  pick <- if (inf_0) inf_0 else floor(runif(1, 1, n_nodes + 1))
   inf[pick] <- TRUE
   reached[pick] <- TRUE
   doses[pick] <- thresh[pick]
@@ -65,7 +68,8 @@ rumour_dose <- function(
     # update boolean vectors
     over <- doses >= thresh
     under <- doses < 0
-    inf <- (inf & !under) | (!rec & over)
+    new_inf <- !rec & over
+    inf <- (inf & !under) | new_inf
     rec <- rec | under
     sus <- !(inf | rec)
     when_inf[!reached & inf] <- t
@@ -77,13 +81,11 @@ rumour_dose <- function(
     n_sus[t] <- sum(sus)
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
+    k_inf[t] <- mean(k[new_inf])
 
     if (save_plots) {
-      V(graph)$state <- ifelse(sus, "sus", ifelse(rec, "rec", "inf"))
-      cols <- rep("", n_nodes)
       cols[inf] <- "#a50104"
       cols[rec] <- "#058a5e"
-      cols[pick] <- "black"
       plot(
         graph, layout = graph_lay, edge.width = ewidth,
         vertex.color = cols, vertex.size = vsize,
@@ -92,12 +94,14 @@ rumour_dose <- function(
 
       file_name <- sprintf("plots/plot_%03i.png", t)
       dev.copy(png, file_name)
+      dev.off()
     }
 
     if (n_inf[t] == 0) {
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
       n_rec <- n_rec[1:t]
+      k_inf <- k_inf[1:t]
       break
     }
   }
@@ -111,16 +115,13 @@ rumour_dose <- function(
 
   if (display) print(ggsir(n_inf, n_rec, n_sus))
 
-
-  if (save_plots) dev.off()
-
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)
 
   return(list(
     start = pick, duration = t, when_inf = when_inf,
     reached = reached, dir_rec = dir_rec,
-    doses = doses, sus = sus, rec = rec,
+    doses = doses, sus = sus, rec = rec, k_inf = k_inf,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }
