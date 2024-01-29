@@ -19,7 +19,7 @@ rumour_dose <- function(
   k <- igraph::degree(graph, mode = "out")
 
   if (save_plots) {
-    cols <- rep("#22223b", n_nodes)
+    cols <- rep(sir_pal[3], n_nodes)
     vsize <- 2 * k^0.3
     ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
   }
@@ -84,8 +84,8 @@ rumour_dose <- function(
     k_inf[t] <- mean(k[new_inf])
 
     if (save_plots) {
-      cols[inf] <- "#a50104"
-      cols[rec] <- "#058a5e"
+      cols[inf] <- sir_pal[4]
+      cols[rec] <- sir_pal[5]
       plot(
         graph, layout = graph_lay, edge.width = ewidth,
         vertex.color = cols, vertex.size = vsize,
