@@ -34,7 +34,7 @@ rumour_dose <- function(
   reached <- rep(FALSE, n_nodes)
   dir_rec <- rep(TRUE, n_nodes)
 
-  pick <- if (inf_0) inf_0 else sample.int(n_nodes, 1, replace = FALSE)
+  pick <- if (inf_0) inf_0 else floor(runif(1, 1, n_nodes + 1))
   inf[pick] <- TRUE
   reached[pick] <- TRUE
   doses[pick] <- thresh[pick]
