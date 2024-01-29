@@ -18,7 +18,8 @@ rumour_dose <- function(
   )
 
   if (save_plots) {
-    vsize <- 2 * degree(graph, mode = "out")^0.3
+    cols <- rep("#22223b", n_nodes)
+    vsize <- 2 * degree(graph)^0.3
     ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
   }
 
@@ -79,11 +80,8 @@ rumour_dose <- function(
     n_rec[t] <- sum(rec)
 
     if (save_plots) {
-      V(graph)$state <- ifelse(sus, "sus", ifelse(rec, "rec", "inf"))
-      cols <- rep("", n_nodes)
       cols[inf] <- "#a50104"
       cols[rec] <- "#058a5e"
-      cols[pick] <- "black"
       plot(
         graph, layout = graph_lay, edge.width = ewidth,
         vertex.color = cols, vertex.size = vsize,
@@ -92,6 +90,7 @@ rumour_dose <- function(
 
       file_name <- sprintf("plots/plot_%03i.png", t)
       dev.copy(png, file_name)
+      dev.off()
     }
 
     if (n_inf[t] == 0) {
@@ -110,9 +109,6 @@ rumour_dose <- function(
   n_rec <- n_rec / n_nodes
 
   if (display) print(ggsir(n_inf, n_rec, n_sus))
-
-
-  if (save_plots) dev.off()
 
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)

@@ -4,7 +4,8 @@ source("src/utils.R")
 rumour_base <- function(
   graph, n_iters, inf_0,
   p_skep, spr_rate, rec_rate,
-  seed = FALSE, display = FALSE
+  seed = FALSE, display = FALSE,
+  save_plots = FALSE, graph_lay = NULL
 ) {
   if (seed) set.seed(seed)
 
@@ -15,6 +16,12 @@ rumour_base <- function(
     ),
     "RsparseMatrix"
   )
+
+  if (save_plots) {
+    cols <- rep("#22223b", n_nodes)
+    vsize <- 2 * degree(graph)^0.3
+    ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
+  }
 
   inf <- rep(FALSE, n_nodes)
   rec <- rep(FALSE, n_nodes)
@@ -74,6 +81,19 @@ rumour_base <- function(
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
 
+    if (save_plots) {
+      cols[inf] <- "#a50104"
+      cols[rec] <- "#058a5e"
+      plot(
+        graph, layout = graph_lay, edge.width = ewidth,
+        vertex.color = cols, vertex.size = vsize,
+        vertex.label = NA, vertex.frame.color = NA
+      )
+
+      file_name <- sprintf("plots/plot_%03i.png", t)
+      dev.copy(png, file_name)
+    }
+
     if (n_inf[t] == 0) {
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
@@ -87,6 +107,7 @@ rumour_base <- function(
   n_rec <- n_rec / n_nodes
 
   if (display) print(ggsir(n_inf, n_rec, n_sus))
+  if (save_plots) dev.off()
 
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)
