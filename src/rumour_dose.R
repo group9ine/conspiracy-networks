@@ -16,10 +16,11 @@ rumour_dose <- function(
     ),
     "RsparseMatrix"
   )
+  k <- igraph::degree(graph, mode = "out")
 
   if (save_plots) {
     cols <- rep("#22223b", n_nodes)
-    vsize <- 2 * degree(graph)^0.3
+    vsize <- 2 * k^0.3
     ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
   }
 
@@ -29,6 +30,7 @@ rumour_dose <- function(
   n_sus <- rep(0, n_iters)
   n_inf <- rep(0, n_iters)
   n_rec <- rep(0, n_iters)
+  k_inf <- rep(0, n_iters)
 
   when_inf <- rep(-1, n_nodes)
   reached <- rep(FALSE, n_nodes)
@@ -78,6 +80,7 @@ rumour_dose <- function(
     n_sus[t] <- sum(sus)
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
+    k_inf[t] <- mean(k[new_inf])
 
     if (save_plots) {
       cols[inf] <- "#a50104"
@@ -116,7 +119,7 @@ rumour_dose <- function(
   return(list(
     start = pick, duration = t, when_inf = when_inf,
     reached = reached, dir_rec = dir_rec,
-    doses = doses, sus = sus, rec = rec,
+    doses = doses, sus = sus, rec = rec, k_inf = k_inf,
     n_sus = n_sus, n_inf = n_inf, n_rec = n_rec
   ))
 }
