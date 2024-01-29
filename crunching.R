@@ -1,4 +1,5 @@
 library(igraph)
+library(ggplot2)
 library(data.table)
 library(parallel)
 source("src/utils.R")
@@ -11,8 +12,11 @@ if (Sys.info()["sysname"] == "Darwin") {
 
 g <- read_graph("data/graph_cph.graphml", format = "graphml")
 k <- unname(degree(g))
+n_nodes <- vcount(g)
 
-get_results <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
+get_results <- function(
+  start, psk, spr, rec, func, thr = rep(5, n_nodes), n_sim = 100
+) {
   res <- lapply(
     seq_len(n_sim),
     function(i) {
@@ -46,7 +50,30 @@ get_results <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
   return(res_dt)
 }
 
-get_evolution <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
+get_everything <- function(
+  start, psk, spr, rec, func, thr = rep(5, n_nodes), n_sim = 100
+) {
+  lapply(
+    seq_len(n_sim),
+    function(i) {
+      if (func == "base") {
+        rumour_base(
+          graph = g, n_iters = 1e4, inf_0 = start,
+          p_skep = psk, spr_rate = spr, rec_rate = rec
+        )
+      } else {
+        rumour_dose(
+          graph = g, n_iters = 1e4, inf_0 = start,
+          p_skep = psk, spr_rate = spr, rec_rate = rec
+        )
+      }
+    }
+  )
+}
+
+get_evolution <- function(
+  start, psk, spr, rec, func, thr = rep(5, n_nodes), n_sim = 100
+) {
   res <- lapply(
     seq_len(n_sim),
     function(i) {
@@ -65,7 +92,7 @@ get_evolution <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
       }
     }
   )
-  return(lapply(res, \(x) x[c("n_sus", "n_inf", "n_rec")]))
+  return(lapply(res, \(x) x[c("n_sus", "n_inf", "n_rec", "k_inf")]))
 }
 
 ###################
@@ -205,12 +232,14 @@ setcolorder(
 ################
 
 st_node <- 1:vcount(g)
+func <- "base"
+n_cores <- 3
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
-    st_node, \(x) get_results(
-      start = x, psk = 0.5, spr = 0.85, rec = 0.15,
-      func = "base", n_sim = 10
+    st_node, \(x) get_everything(
+      start = x, psk = 0.1, spr = 0.85, rec = 0.15,
+      func = func, n_sim = 500
     ),
     mc.cores = n_cores,
     mc.preschedule = FALSE
@@ -223,45 +252,58 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
-    cluster, st_node, \(x) get_results(
-      start = x, psk = 0.5, spr = 0.85, rec = 0.15,
-      func = "base", n_sim = 1000
+    cluster, st_node, \(x) get_everything(
+      start = x, psk = 0.1, spr = 0.85, rec = 0.15,
+      func = func, n_sim = 500
     )
   )
   fs_time <- Sys.time()
   stopCluster(cluster)
 }
 
-res_dt <- rbindlist(results)
-setcolorder(
-  res_dt, c(
-    "psk", "spr", "rec", "start", "duration",
-    "att_rate", "max_inf", "when_inf", "reached", "dir_rec"
-  )
-)
-
-# fwrite(res_dt, "out/node_by_node.csv")
+# dput(res_dt, sprintf("out/%s_by_node.txt", func))
 
 ######################
 # OUTBREAK EVOLUTION #
 ######################
 
-func <- "dose"
-start <- which.max(k)
-psk <- 0.5
+func <- "base"
+start <- 0
+psk <- 0.15
 spr <- 0.85
 rec <- 0.15
-iters <- 1000
+iters <- 100
 
 st_time <- Sys.time()
-results <- get_evolution(start, psk, spr, rec, func, k, iters)
+results <- get_evolution(start, psk, spr, rec, func, rep(5, vcount(g)), iters)
 fs_time <- Sys.time()
 
 fs_time - st_time
 str(results)
 
-evo <- rbindlist(results, idcol = "sim") |>
-  melt(
-    id.vars = "sim", measure.vars = c("n_sus", "n_inf", "n_rec"),
-    variable.name = "class", value.name = "inc"
-  )
+evo <- rbindlist(results, idcol = "sim")
+evo[, iter := seq_len(.N), by = sim]
+evo_m <- melt(
+  evo[, -"k_inf"], id.vars = c("sim", "iter"),
+  measure.vars = c("n_sus", "n_inf", "n_rec"),
+  variable.name = "class", value.name = "inc"
+)[, class := sub("n_", "", class, fixed = TRUE)]
+
+my_pal <- c(sus = "#22223b", inf = "#a50104", rec = "#058a5e")
+
+evo[!is.na(k_inf) & iter < 150][, med := median(k_inf), by = iter] |>
+  ggplot(aes(iter, k_inf, group = sim)) +
+    geom_line(alpha = 0.1) +
+    geom_line(aes(y = med, group = 1), linewidth = 1.2)
+
+ggplot(evo_m, aes(iter, inc, group = interaction(sim, class), color = class)) +
+  geom_line(alpha = 0.1) +
+  scale_colour_manual(values = my_pal)
+
+evo_m[iter < 500,
+      .(lower = quantile(inc, 0.025), mean = median(inc),
+        upper = quantile(inc, 0.975)),
+      by = .(iter, class)] |>
+  ggplot(aes(iter, mean, fill = class)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+    geom_line(aes(colour = class), linewidth = 0.8)
