@@ -10,8 +10,9 @@ if (Sys.info()["sysname"] == "Darwin") {
 }
 
 g <- read_graph("data/graph_cph.graphml", format = "graphml")
+k <- unname(degree(g))
 
-get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
+get_results <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
   res <- lapply(
     seq_len(n_sim),
     function(i) {
@@ -24,7 +25,7 @@ get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
       } else {
         rumour_dose(
           graph = g, n_iters = 1e4, inf_0 = start,
-          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5,
+          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = thr,
           seed = FALSE, display = FALSE
         )
       }
@@ -45,7 +46,7 @@ get_results <- function(start, psk, spr, rec, func, n_sim = 100) {
   return(res_dt)
 }
 
-get_evolution <- function(start, psk, spr, rec, func, n_sim = 100) {
+get_evolution <- function(start, psk, spr, rec, func, thr = k, n_sim = 100) {
   res <- lapply(
     seq_len(n_sim),
     function(i) {
@@ -58,13 +59,13 @@ get_evolution <- function(start, psk, spr, rec, func, n_sim = 100) {
       } else {
         rumour_dose(
           graph = g, n_iters = 1e4, inf_0 = start,
-          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5,
+          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = thr,
           seed = FALSE, display = FALSE
         )
       }
     }
   )
-  return(res[c("n_sus", "n_inf", "n_rec")])
+  return(lapply(res, \(x) x[c("n_sus", "n_inf", "n_rec")]))
 }
 
 ###################
@@ -246,14 +247,14 @@ setcolorder(
 ######################
 
 func <- "base"
-start <- 0
+start <- which.max(k)
 psk <- 0.5
 spr <- 0.85
 rec <- 0.15
-iters <- 1000
+iters <- 5
 
 st_time <- Sys.time()
-results <- get_evolution(start, psk, spr, rec, func, iters)
+results <- get_evolution(start, psk, spr, rec, func, k, iters)
 fs_time <- Sys.time()
 
 fs_time - st_time

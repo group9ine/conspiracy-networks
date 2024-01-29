@@ -30,7 +30,7 @@ rumour_dose <- function(
   pick <- if (inf_0) inf_0 else sample.int(n_nodes, 1, replace = FALSE)
   inf[pick] <- TRUE
   reached[pick] <- TRUE
-  doses[pick] <- thresh
+  doses[pick] <- thresh[pick]
   when_inf[pick] <- 0
 
   sus <- !(inf | rec)
