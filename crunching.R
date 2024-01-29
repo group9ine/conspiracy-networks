@@ -251,14 +251,14 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
     cluster,
     c(
       "get_everything", "rumour_base", "rumour_dose",
-      "st_node", "g", "n_nodes"
+      "st_node", "g", "n_nodes", "func"
     )
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
     cluster, st_node, \(x) get_everything(
       start = x, psk = 0.1, spr = 0.85, rec = 0.15,
-      func = func, n_sim = 500
+      func = func, n_sim = 5
     )
   )
   fs_time <- Sys.time()
