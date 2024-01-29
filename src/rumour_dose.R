@@ -4,7 +4,8 @@ source("src/utils.R")
 rumour_dose <- function(
   graph, n_iters, inf_0,
   p_skep, spr_rate, rec_rate, thresh,
-  seed = FALSE, display = FALSE
+  seed = FALSE, display = FALSE,
+  save_plots = FALSE, graph_lay = NULL
 ) {
   if (seed) set.seed(seed)
 
@@ -15,6 +16,11 @@ rumour_dose <- function(
     ),
     "RsparseMatrix"
   )
+
+  if (save_plots) {
+    vsize <- 2 * degree(graph, mode = "out")^0.3
+    ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
+  }
 
   doses <- rep(0, n_nodes)
   inf <- rep(FALSE, n_nodes)
@@ -72,6 +78,22 @@ rumour_dose <- function(
     n_inf[t] <- sum(inf)
     n_rec[t] <- sum(rec)
 
+    if (save_plots) {
+      V(graph)$state <- ifelse(sus, "sus", ifelse(rec, "rec", "inf"))
+      cols <- rep("", n_nodes)
+      cols[inf] <- "#a50104"
+      cols[rec] <- "#058a5e"
+      cols[pick] <- "black"
+      plot(
+        graph, layout = graph_lay, edge.width = ewidth,
+        vertex.color = cols, vertex.size = vsize,
+        vertex.label = NA, vertex.frame.color = NA
+      )
+
+      file_name <- sprintf("plots/plot_%03i.png", t)
+      dev.copy(png, file_name)
+    }
+
     if (n_inf[t] == 0) {
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
@@ -88,6 +110,9 @@ rumour_dose <- function(
   n_rec <- n_rec / n_nodes
 
   if (display) print(ggsir(n_inf, n_rec, n_sus))
+
+
+  if (save_plots) dev.off()
 
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)
