@@ -246,12 +246,12 @@ setcolorder(
 # OUTBREAK EVOLUTION #
 ######################
 
-func <- "base"
+func <- "dose"
 start <- which.max(k)
 psk <- 0.5
 spr <- 0.85
 rec <- 0.15
-iters <- 5
+iters <- 1000
 
 st_time <- Sys.time()
 results <- get_evolution(start, psk, spr, rec, func, k, iters)
@@ -260,7 +260,8 @@ fs_time <- Sys.time()
 fs_time - st_time
 str(results)
 
-dput(
-  results,
-  sprintf("simulations/%s_%i_%g_%g_%g.txt", func, start, psk, spr, rec)
-)
+evo <- rbindlist(results, idcol = "sim") |>
+  melt(
+    id.vars = "sim", measure.vars = c("n_sus", "n_inf", "n_rec"),
+    variable.name = "class", value.name = "inc"
+  )
