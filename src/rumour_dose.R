@@ -68,7 +68,8 @@ rumour_dose <- function(
     # update boolean vectors
     over <- doses >= thresh
     under <- doses < 0
-    inf <- (inf & !under) | (!rec & over)
+    new_inf <- !rec & over
+    inf <- (inf & !under) | new_inf
     rec <- rec | under
     sus <- !(inf | rec)
     when_inf[!reached & inf] <- t
