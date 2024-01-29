@@ -101,6 +101,7 @@ rumour_base <- function(
       n_sus <- n_sus[1:t]
       n_inf <- n_inf[1:t]
       n_rec <- n_rec[1:t]
+      k_inf <- k_inf[1:t]
       break
     }
   }
