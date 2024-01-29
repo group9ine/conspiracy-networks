@@ -248,7 +248,11 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 } else {
   cluster <- makeCluster(n_cores)
   clusterExport(
-    cluster, c("get_results", "rumour_base", "rumour_dose", "st_node", "g")
+    cluster,
+    c(
+      "get_everything", "rumour_base", "rumour_dose",
+      "st_node", "g", "n_nodes"
+    )
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
