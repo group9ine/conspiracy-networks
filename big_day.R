@@ -11,9 +11,9 @@ if (Sys.info()["sysname"] == "Darwin") {
 
 img_dir <- "img"
 
-##############################
-# THIS IS A NETWORK 🤪✏️ 🌀⚡ #
-##############################
+#####################
+# THIS IS A NETWORK #
+#####################
 
 g <- read_graph("data/graph_cph.graphml", format = "graphml")
 k <- unname(degree(g))
