@@ -39,7 +39,7 @@ rumour_dose <- function(
   pick <- if (inf_0) inf_0 else floor(runif(1, 1, n_nodes + 1))
   inf[pick] <- TRUE
   reached[pick] <- TRUE
-  doses[pick] <- thresh[pick]
+  doses[pick] <- thresh
   when_inf[pick] <- 0
 
   sus <- !(inf | rec)
