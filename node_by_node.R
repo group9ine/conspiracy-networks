@@ -1,5 +1,4 @@
 library(igraph)
-library(ggplot2)
 library(data.table)
 library(parallel)
 source("src/utils.R")
@@ -33,17 +32,24 @@ get_everything <- function(psk, spr, rec, func) {
   )
 }
 
-n_sim <- 2
-func <- "dose"
+whoami <- "gg"
+n_sim <- 9
+done <- list.files("out/nbn") |>
+  stringr::str_extract("[1-9]+") |>
+  as.integer() |>
+  max()
+sims <- seq(done + 1, len = n_sim)
+
+func <- "base"
 n_cores <- 3
+
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
-    seq_len(n_sim),
-    function(i) {
+    sims, function(i) {
       res <- get_everything(psk = 0.1, spr = 0.85, rec = 0.15, func = func)
-      message(sprintf("Simulation %d / %d", i, n_sim))
-      dput(res, sprintf("out/nbn/%s-%03d.txt", func, i))
+      message(sprintf("Simulation %d/%d", i, n_sim))
+      dput(res, sprintf("out/nbn/%s-%s-%03d.txt", whoami, func, i))
       return(res)
     },
     mc.cores = n_cores,
@@ -53,19 +59,17 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
 } else {
   cluster <- makeCluster(n_cores)
   clusterExport(
-    cluster,
-    c(
+    cluster, c(
       "get_everything", "rumour_base", "rumour_dose",
-      "n_sim", "g", "n_nodes", "func"
+      "sims", "n_sim", "g", "n_nodes", "func", "whoami"
     )
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
-    cluster, seq_len(n_sim),
-    function(i) {
+    cluster, sims, function(i) {
       res <- get_everything(psk = 0.1, spr = 0.85, rec = 0.15, func = func)
-      message(sprintf("Simulation %d / %d", i, n_sim))
-      dput(res, sprintf("out/nbn/%s-%03d.txt", func, i))
+      message(sprintf("Simulation %d/%d", i, n_sim))
+      dput(res, sprintf("out/nbn/%s-%s-%03d.txt", whoami, func, i))
       return(res)
     }
   )
