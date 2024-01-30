@@ -15,7 +15,7 @@ k <- unname(degree(g))
 n_nodes <- vcount(g)
 
 get_everything <- function(psk, spr, rec, func) {
-  res <- lapply(
+  lapply(
     seq_len(n_nodes),
     function(i) {
       if (func == "base") {
