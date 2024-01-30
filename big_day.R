@@ -25,8 +25,8 @@ g_lay <- layout_with_graphopt(
 
 # colour nodes by centrality
 cent <- eigen_centrality(g)$vector
-n_cols <- 5
-vcols <- colorRampPalette(sir_pal[c(3, 5)])(n_cols)[cut(
+n_cols <- 10
+vcols <- colorRampPalette(sir_pal[c(3, 4)])(n_cols)[cut(
   cent, breaks = seq(min(cent), max(cent), len = n_cols + 1), include.lowest = TRUE
 )]
 
@@ -88,12 +88,18 @@ conv <- c("reached", "dir_rec", "when_inf")
 base_sk[, (conv) := lapply(.SD, \(x) lapply(x, atoi)), .SDcols = conv][
   , `:=`(att_rate = att_rate / n_nodes, n_dir = sapply(dir_rec, sum) / n_nodes)]
 
-# do the same for dose TODO
-# dose_sk <- fread("out/dose_skeptics.csv")[
-#   , (conv) := lapply(.SD, \(x) lapply(x, atoi)), .SDcols = conv][
-#   , `:=`(att_rate = att_rate / n_nodes, n_dir = sapply(dir_rec, sum) / n_nodes)]
+# do the same for dose
+dose_sk <- fread("out/dose_skeptics.csv")[
+  , (conv) := lapply(.SD, \(x) lapply(x, atoi)), .SDcols = conv][
+  , `:=`(att_rate = att_rate / n_nodes, n_dir = sapply(dir_rec, sum) / n_nodes)]
 
 #### TODO analysis
+
+#####################
+# HOMOGENOUS MIXING #
+#####################
+
+hm_data <- fread("hma/arrays_data.csv")
 
 ###############
 # OTHER STUFF #
