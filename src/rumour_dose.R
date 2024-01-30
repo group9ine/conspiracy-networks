@@ -86,14 +86,13 @@ rumour_dose <- function(
     if (save_plots) {
       cols[inf] <- sir_pal[4]
       cols[rec] <- sir_pal[5]
+      jpeg(sprintf("img/vid/dose_%04i.jpg", t), 1000, 1000, bg = sir_pal[1])
       plot(
-        graph, layout = graph_lay, edge.width = ewidth,
+        graph, layout = graph_lay,
         vertex.color = cols, vertex.size = vsize,
-        vertex.label = NA, vertex.frame.color = NA
+        vertex.label = NA, vertex.frame.color = NA,
+        edge.color = sir_pal[2], edge.width = ewidth
       )
-
-      file_name <- sprintf("plots/plot_%03i.png", t)
-      dev.copy(png, file_name)
       dev.off()
     }
 

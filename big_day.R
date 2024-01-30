@@ -71,6 +71,22 @@ ggplot() +
   theme_sir()
 save_plot("wgt_hist", img_dir, scale = 1.8)
 
+# infection videos
+base_vid <- rumour_base(
+  graph = g, n_iters = 1e4, inf_0 = which.max(k),
+  p_skep = 0.1, spr_rate = 0.85, rec_rate = 0.15,
+  seed = 80085, display = TRUE, save_plots = TRUE,
+  graph_lay = g_lay
+)
+system("ffmpeg -r 10 -i img/vid/base_%04d.jpg img/vid/base.mp4")
+dose_vid <- rumour_dose(
+  graph = g, n_iters = 1e4, inf_0 = which.max(k),
+  p_skep = 0.1, spr_rate = 0.85, rec_rate = 0.15, thresh = 5,
+  seed = 80085, display = TRUE, save_plots = TRUE,
+  graph_lay = g_lay
+)
+system("ffmpeg -r 10 -i img/vid/dose_%04d.jpg img/vid/dose.mp4")
+
 #################
 # GRID SEARCHES #
 #################

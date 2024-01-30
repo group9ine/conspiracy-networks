@@ -20,7 +20,7 @@ rumour_base <- function(
 
   if (save_plots) {
     cols <- rep(sir_pal[3], n_nodes)
-    vsize <- 2 * k^0.3
+    vsize <- 2.25 * k^0.3
     ewidth <- 0.5 * E(graph)$weight / min(E(graph)$weight)
   }
 
@@ -87,14 +87,14 @@ rumour_base <- function(
     if (save_plots) {
       cols[inf] <- sir_pal[4]
       cols[rec] <- sir_pal[5]
+      jpeg(sprintf("img/vid/base_%04i.jpg", t), 1000, 1000, bg = sir_pal[1])
       plot(
-        graph, layout = graph_lay, edge.width = ewidth,
+        graph, layout = graph_lay,
         vertex.color = cols, vertex.size = vsize,
-        vertex.label = NA, vertex.frame.color = NA
+        vertex.label = NA, vertex.frame.color = NA,
+        edge.color = sir_pal[2], edge.width = ewidth
       )
-
-      file_name <- sprintf("plots/plot_%03i.png", t)
-      dev.copy(png, file_name)
+      dev.off()
     }
 
     if (n_inf[t] == 0) {
@@ -111,7 +111,6 @@ rumour_base <- function(
   n_rec <- n_rec / n_nodes
 
   if (display) print(ggsir(n_inf, n_rec, n_sus))
-  if (save_plots) dev.off()
 
   # clean up the rng seed if it was set
   rm(.Random.seed, envir = .GlobalEnv)
