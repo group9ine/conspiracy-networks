@@ -11,7 +11,7 @@ fg_col <- sir_pal[3]
 nice_sir <- c("Susceptible", "Infected", "Recovered")
 
 # text/line sizes
-base_pt <- 15
+base_pt <- 18
 sz_big <- ggplot2::rel(1.778)
 sz_medium <- ggplot2::rel(1.333)
 sz_normal <- ggplot2::rel(1)
