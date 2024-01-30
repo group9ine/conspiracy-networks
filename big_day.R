@@ -53,7 +53,7 @@ ggplot() +
   ) +
   labs(x = "Degree", y = "Density") +
   theme_sir()
-save_plot("deg_hist", img_dir)
+save_plot("deg_hist", img_dir, scale = 1.8)
 
 # weights histogram
 ggplot() +
@@ -64,7 +64,12 @@ ggplot() +
   ) +
   scale_y_continuous(
     breaks = scales::pretty_breaks(),
-
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  labs(x = "Edge weight", y = "Density") +
+  theme_sir()
+save_plot("wgt_hist", img_dir, scale = 1.8)
 
 #################
 # GRID SEARCHES #
@@ -99,7 +104,89 @@ setcolorder(dose_grid, c(5, 6, 1:4))
 setorder(dose_grid, spr_rate, rec_rate)
 fwrite(dose_grid, "out/dose_grid.csv")
 
-##### TODO analysis
+# attack rate heatmaps
+min_ar <- min(base_grid[, min(att_rate)], dose_grid[, min(att_rate)])
+max_ar <- max(base_grid[, max(att_rate)], dose_grid[, max(att_rate)])
+ggplot(base_grid, aes(spr_rate, rec_rate, fill = att_rate)) +
+  scale_fill_viridis_c(lim = c(min_ar, max_ar)) +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Final attack rate",
+    title = "Simple contagion"
+  ) +
+  theme_sir()
+save_plot("att_rate_grid_base", img_dir)
+ggplot(dose_grid, aes(spr_rate, rec_rate, fill = att_rate)) +
+  scale_fill_viridis_c(lim = c(min_ar, max_ar)) +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Final attack rate",
+    title = "Complex contagion"
+  ) +
+  theme_sir()
+save_plot("att_rate_grid_dose", img_dir)
+
+# duration heatmaps
+min_dur <- min(base_grid[, min(duration)], dose_grid[, min(duration)])
+max_dur <- max(base_grid[, max(duration)], dose_grid[, max(duration)])
+ggplot(base_grid, aes(spr_rate, rec_rate, fill = duration)) +
+  scale_fill_viridis_c(lim = c(min_dur, max_dur)) +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Epidemic duration",
+    title = "Simple contagion"
+  ) +
+  theme_sir()
+save_plot("duration_grid_base", img_dir)
+ggplot(dose_grid, aes(spr_rate, rec_rate, fill = duration)) +
+  scale_fill_viridis_c() +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Epidemic duration",
+    title = "Complex contagion"
+  ) +
+  theme_sir()
+save_plot("duration_grid_dose", img_dir)
+
+# max_inf heatmaps
+min_mi <- min(base_grid[, min(max_inf)], dose_grid[, min(max_inf)])
+max_mi <- max(base_grid[, max(max_inf)], dose_grid[, max(max_inf)])
+ggplot(base_grid, aes(spr_rate, rec_rate, fill = max_inf)) +
+  scale_fill_viridis_c(lim = c(min_mi, max_mi)) +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Peak prevalence",
+    title = "Simple contagion"
+  ) +
+  theme_sir()
+save_plot("max_inf_grid_base", img_dir)
+ggplot(dose_grid, aes(spr_rate, rec_rate, fill = max_inf)) +
+  scale_fill_viridis_c(lim = c(min_mi, max_mi)) +
+  geom_tile() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  labs(
+    x = "Spreading rate",
+    y = "Recovery rate",
+    fill = "Peak prevalence",
+    title = "Complex contagion"
+  ) +
+  theme_sir()
+save_plot("max_inf_grid_dose", img_dir)
 
 ############
 # SKEPTICS #
@@ -121,6 +208,74 @@ dose_sk <- fread("out/dose_skeptics.csv")[
   , `:=`(att_rate = att_rate / n_nodes, n_dir = sapply(dir_rec, sum) / n_nodes)]
 
 #### TODO analysis
+
+################
+# NODE BY NODE #
+################
+
+nbn_files <- list.files("out/nbn", full.names = TRUE)
+base_nbn <- purrr::map(
+  nbn_files[grep("base", nbn_files)], dget,
+  .progress = TRUE
+) |>
+  unlist(recursive = FALSE, use.names = FALSE)
+dose_nbn <- purrr::map(
+  nbn_files[grep("dose", nbn_files)], dget,
+  .progress = TRUE
+) |>
+  unlist(recursive = FALSE, use.names = FALSE)
+
+# final attack rate by starting node
+base_ar <- rbindlist(
+  lapply(base_nbn, \(x) list(start = x$start, att_rate = sum(x$reached)))
+)[, .(att_rate = mean(att_rate) / n_nodes), keyby = start]
+dose_ar <- rbindlist(
+  lapply(dose_nbn, \(x) list(start = x$start, att_rate = sum(x$reached)))
+)[, .(att_rate = mean(att_rate) / n_nodes), keyby = start]
+
+# correlation between closeness and final attack rate
+prank <- unname(page_rank(g)$vector)
+close <- unname(closeness(g))
+eigen <- unname(eigen_centrality(g)$vector)
+data.table(att_rate = base_ar$att_rate, prank, close, eigen = log10(eigen)) |>
+  melt(
+    measure.vars = c("prank", "close", "eigen"),
+    variable.name = "ctype", value.name = "cent"
+  ) |>
+  ggplot(aes(att_rate, cent)) +
+    geom_point() +
+    facet_grid(rows = vars(ctype), scales = "free_y")
+data.table(att_rate = dose_ar$att_rate, prank, close, eigen = log10(eigen)) |>
+  melt(
+    measure.vars = c("prank", "close", "eigen"),
+    variable.name = "ctype", value.name = "cent"
+  ) |>
+  ggplot(aes(att_rate, cent)) +
+    geom_point() +
+    facet_grid(rows = vars(ctype), scales = "free_y")
+
+# node distance vs when_inf
+dists <- distances(g)
+base_wi <- rbindlist(
+  lapply(
+    base_nbn,
+    \(x) list(start = x$start, end = 1:n_nodes, when = x$when_inf)
+  )
+)[when > 0, .(when = mean(when), .N), keyby = .(start, end)]
+  , dist := mapply(\(a, b) dists[a, b], start, end)]
+ggplot(base_wi, aes(dist, N)) +
+  geom_point(alpha = 0.1, size = sz_micro)
+
+base_wi[, .(when = mean(when)), keyby = .(k1 = k[start], k2 = k[end])] |>
+  ggplot(aes(k1, k2, fill = when)) +
+    scale_fill_viridis_c() +
+    geom_tile() +
+    coord_cartesian(expand = FALSE) +
+    theme_sir()
+
+ggplot(base_wi, aes(start, end, fill = when)) +
+  scale_fill_viridis_c()
+  geom_tile() +
 
 #####################
 # HOMOGENOUS MIXING #
@@ -153,11 +308,11 @@ ggplot(hm_data, aes(iter, mean,fill = class)) +
 
 save_plot("homo_mix", img_dir)
 
-###############
-# OTHER STUFF #
-###############
+#############
+# EVOLUTION #
+#############
 
-rumour_base(
+base <- rumour_base(
   graph = g, n_iters = 1e4, inf_0 = 0,
   p_skep = 0.1, spr_rate = 0.85, rec_rate = 0.15,
   display = TRUE
