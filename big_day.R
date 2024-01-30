@@ -223,7 +223,24 @@ dose_sk <- fread("out/dose_skeptics.csv")[
   , (conv) := lapply(.SD, \(x) lapply(x, atoi)), .SDcols = conv][
   , `:=`(att_rate = att_rate / n_nodes, n_dir = sapply(dir_rec, sum) / n_nodes)]
 
-#### TODO analysis
+base_sk[, .(duration_mu = mean(duration), duration_sd = sd(duration),
+            att_rate_mu = mean(att_rate), att_rate_sd = sd(att_rate),
+            max_inf_mu = mean(max_inf), max_inf_sd = sd(max_inf)),
+        by = psk] |>
+  melt(id = "psk", measure = patterns(mean = "_mu$", sd = "_sd$")) |>
+  ggplot(aes(psk, mean)) +
+    geom_line() +
+    labs(
+      x = "Skeptical probability", y = NULL,
+      title = "Simple contagion"
+    ) +
+    facet_grid(
+      rows = vars(variable), scales = "free_y",
+      labeller = as_labeller(
+        c(`1` = "Epid. duration", `2` = "Attack rate", `3` = "Peak prevalence")
+      )
+    ) +
+    theme_sir()
 
 ################
 # NODE BY NODE #
@@ -321,7 +338,6 @@ ggplot(hm_data, aes(iter, mean,fill = class)) +
     colour = "Compartment", fill = "Compartment"
   ) +
   theme_sir()
-
 save_plot("homo_mix", img_dir)
 
 #############
