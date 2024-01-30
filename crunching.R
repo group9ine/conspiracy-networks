@@ -50,27 +50,6 @@ get_results <- function(
   return(res_dt)
 }
 
-get_everything <- function(
-  start, psk, spr, rec, func, thr = rep(5, n_nodes), n_sim = 100
-) {
-  lapply(
-    seq_len(n_sim),
-    function(i) {
-      if (func == "base") {
-        rumour_base(
-          graph = g, n_iters = 1e4, inf_0 = start,
-          p_skep = psk, spr_rate = spr, rec_rate = rec
-        )
-      } else {
-        rumour_dose(
-          graph = g, n_iters = 1e4, inf_0 = start,
-          p_skep = psk, spr_rate = spr, rec_rate = rec
-        )
-      }
-    }
-  )
-}
-
 get_evolution <- function(
   start, psk, spr, rec, func, thr = rep(5, n_nodes), n_sim = 100
 ) {
@@ -231,16 +210,38 @@ setcolorder(
 # NODE BY NODE #
 ################
 
-st_node <- 1:vcount(g)
-func <- "base"
+get_everything <- function(psk, spr, rec, func, thr = rep(5, n_nodes)) {
+  res <- lapply(
+    seq_len(n_nodes),
+    function(i) {
+      if (func == "base") {
+        rumour_base(
+          graph = g, n_iters = 1e4, inf_0 = i,
+          p_skep = psk, spr_rate = spr, rec_rate = rec
+        )
+      } else {
+        rumour_dose(
+          graph = g, n_iters = 1e4, inf_0 = i,
+          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = thr,
+        )
+      }
+    }
+  )
+}
+
+n_sim <- 2
+func <- "dose"
 n_cores <- 3
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
-    st_node, \(x) get_everything(
-      start = x, psk = 0.1, spr = 0.85, rec = 0.15,
-      func = func, n_sim = 500
-    ),
+    seq_len(n_sim),
+    function(i) {
+      res <- get_everything(psk = 0.1, spr = 0.85, rec = 0.15, func = func)
+      message(sprintf("Simulation %d / %d", i, n_sim))
+      dput(res, sprintf("out/nbn/%s-%03d.txt", func, i))
+      return(res)
+    },
     mc.cores = n_cores,
     mc.preschedule = FALSE
   )
@@ -251,21 +252,24 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
     cluster,
     c(
       "get_everything", "rumour_base", "rumour_dose",
-      "st_node", "g", "n_nodes", "func"
+      "n_sim", "g", "n_nodes", "func"
     )
   )
   st_time <- Sys.time()
   results <- parLapplyLB(
-    cluster, st_node, \(x) get_everything(
-      start = x, psk = 0.1, spr = 0.85, rec = 0.15,
-      func = func, n_sim = 5
-    )
+    cluster, seq_len(n_sim),
+    function(i) {
+      res <- get_everything(psk = 0.1, spr = 0.85, rec = 0.15, func = func)
+      message(sprintf("Simulation %d / %d", i, n_sim))
+      dput(res, sprintf("out/nbn/%s-%03d.txt", func, i))
+      return(res)
+    }
   )
   fs_time <- Sys.time()
   stopCluster(cluster)
 }
 
-# dput(res_dt, sprintf("out/%s_by_node.txt", func))
+# dput(results, sprintf("out/%s_by_node.txt", func))
 
 ######################
 # OUTBREAK EVOLUTION #
