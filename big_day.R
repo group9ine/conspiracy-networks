@@ -30,7 +30,7 @@ vcols <- colorRampPalette(sir_pal[c(3, 4)])(n_cols)[cut(
   cent, breaks = seq(min(cent), max(cent), len = n_cols + 1), include.lowest = TRUE
 )]
 
-png(paste(img_dir, "nw_plot.png", sep = "/"), 1000, 1000)
+png(paste(img_dir, "nw_plot.png", sep = "/"), 1000, 1000, bg = sir_pal[1])
 plot(
   g, layout = g_lay,
   vertex.color = vcols, vertex.size = 2.25 * k^0.3,
@@ -38,6 +38,33 @@ plot(
   edge.color = sir_pal[2], edge.width = 0.5 * w / min(w)
 )
 dev.off()
+
+# degree histogram
+ggplot() +
+  geom_histogram(
+    aes(k, after_stat(density)),
+    binwidth = 1, boundary = 0.5, fill = sir_pal[2],
+    colour = bg_col
+  ) +
+  scale_y_continuous(
+    breaks = scales::pretty_breaks(),
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  labs(x = "Degree", y = "Density") +
+  theme_sir()
+save_plot("deg_hist", img_dir)
+
+# weights histogram
+ggplot() +
+  geom_histogram(
+    aes(w, after_stat(density)),
+    binwidth = 0.05, boundary = 0, fill = sir_pal[2],
+    colour = bg_col
+  ) +
+  scale_y_continuous(
+    breaks = scales::pretty_breaks(),
+
 
 #################
 # GRID SEARCHES #
@@ -99,7 +126,32 @@ dose_sk <- fread("out/dose_skeptics.csv")[
 # HOMOGENOUS MIXING #
 #####################
 
-hm_data <- fread("hma/arrays_data.csv")
+hm_data <- fread("hma/arrays_data.csv")[, iter := .I]
+means <- melt(
+  hm_data, id.vars = "iter", measure.vars = c("s", "i", "r"),
+  variable.name = "class", value.name = "mean"
+)
+sigmas <- melt(
+  hm_data, id.vars = "iter", measure.vars = patterns("sigma"),
+  variable.name = "class", value.name = "sigma"
+)[, class := sub("sigma_", "", class, fixed = TRUE)]
+
+hm_data <- merge(means, sigmas)[
+  , class := factor(class, c("s", "i", "r"))][
+  order(iter, class)]
+
+ggplot(hm_data, aes(iter, mean,fill = class)) +
+  geom_ribbon(aes(ymin = mean - sigma, ymax = mean + sigma), alpha = 0.3) +
+  geom_line(aes(colour = class), linewidth = sz_small) +
+  scale_colour_manual(values = sir_pal[3:5], labels = nice_sir) +
+  scale_fill_manual(values = sir_pal[3:5], labels = nice_sir) +
+  labs(
+    x = "Iteration", y = "Fractional prevalence",
+    colour = "Compartment", fill = "Compartment"
+  ) +
+  theme_sir()
+
+save_plot("homo_mix", img_dir)
 
 ###############
 # OTHER STUFF #

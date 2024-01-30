@@ -33,14 +33,15 @@ get_everything <- function(psk, spr, rec, func) {
 }
 
 whoami <- "gg"
-n_sim <- 9
-done <- list.files("out/nbn") |>
+n_sim <- 6
+func <- "dose"
+done <- list.files("out/nbn")
+done <- done[grep(func, done)] |>
   stringr::str_extract("[1-9]+") |>
-  as.integer() |>
-  max()
+  as.integer()
+done <- if (length(done) > 0) max(done) else 0
 sims <- seq(done + 1, len = n_sim)
 
-func <- "base"
 n_cores <- 3
 
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
