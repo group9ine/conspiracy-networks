@@ -604,6 +604,69 @@ save_plot("kinf_dose", img_dir)
 # NULL MODEL COMPARISON #
 #########################
 
-null <- fread("out/null.csv")
-conv <- names(null)[sapply(null, is.character)]
-null[, (conv) := lapply(.SD, \(x) lapply(x, atoi)), .SDcols = conv]
+nbn_files <- list.files("out/nbn", full.names = TRUE)
+null_nbn <- purrr::map(
+  nbn_files[grep("null", nbn_files)], dget,
+  .progress = TRUE
+) |>
+  unlist(recursive = FALSE, use.names = FALSE)
+
+null_ar <- lapply(null_nbn, \(x) sum(x$reached) / n_nodes) |>
+  unlist(FALSE, FALSE)
+
+base_ar <- lapply(base_nbn, \(x) sum(x$reached) / n_nodes) |>
+  unlist(FALSE, FALSE)
+
+data.table(null = null_ar, base = base_ar[seq_along(null_ar)]) |>
+  melt(measure = c("null", "base")) |>
+  ggplot(aes(x = value, fill = variable)) +
+    geom_histogram(
+      aes(y = after_stat(density)),
+      binwidth = 0.025, boundary = 0, alpha = 0.3,
+      position = "identity"
+    ) +
+    scale_fill_manual(
+      values = c(null = sir_pal[3], base = sir_pal[4]),
+      labels = c(null = "Null model", base = "Copenhagen")
+    ) +
+    labs(x = "Final attack rate", y = "Density", fill = NULL, title = "Final attack rate histograms", subtitle = "Copenhagen network vs its configuration null model") +
+    coord_cartesian(expand = FALSE) +
+    theme_sir()
+save_plot("null_model", "img")
+
+ggplot() +
+  geom_histogram(
+    aes(x = null_ar, y = after_stat(density)),
+    binwidth = 0.025, boundary = 0
+  )
+
+##########
+# EXTRAS #
+##########
+
+rinf <- function(x, a, b, p){
+  return(a/b*(1-x) - a/b*log(1-x) + p - a/b - p*(1-x) - x)
+}
+
+x <- seq(0, by = 0.001, len = 1000)
+
+data.table(x = x, p0 = rinf(x, 0.15, 0.3, 0.1), p1 = rinf(x, 0.15, 0.3, 1)) |>
+  melt(id = "x") |>
+  ggplot(aes(x, value, colour = variable)) +
+    geom_hline(
+      aes(yintercept = 0), linewidth = sz_small,
+      linetype = "dashed", colour = sir_pal[2]
+    ) +
+    geom_line(linewidth = sz_small) +
+    scale_colour_manual(
+      values = c(p0 = sir_pal[3], p1 = sir_pal[4]),
+      labels = c(p0 = expression(paste(italic("p"), " = 0.1")),
+                 p1 = expression(paste(italic("p"), " = 1.0")))
+    ) +
+    labs(
+      x = expression(italic("r")),
+      y = expression(paste(italic("f"), "(", italic("r"), ")")),
+      colour = NULL
+    ) +
+    theme_sir()
+save_plot("universality", img_dir, asp_ratio = c(4.5, 3))
