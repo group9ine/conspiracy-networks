@@ -22,10 +22,20 @@ get_everything <- function(psk, spr, rec, func) {
           graph = g, n_iters = 1e4, inf_0 = i,
           p_skep = psk, spr_rate = spr, rec_rate = rec
         )
+      } else if (func == "null") {
+        while (TRUE) {
+          gg <- igraph::sample_degseq(out.deg = k)
+          if (clusters(gg)$csize[1] == n_nodes)
+            break
+        }
+        rumour_base(
+          graph = gg, n_iters = 1e4, inf_0 = i,
+          p_skep = psk, spr_rate = spr, rec_rate = rec
+        )
       } else {
         rumour_dose(
           graph = g, n_iters = 1e4, inf_0 = i,
-          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5,
+          p_skep = psk, spr_rate = spr, rec_rate = rec, thresh = 5
         )
       }
     }
@@ -33,22 +43,23 @@ get_everything <- function(psk, spr, rec, func) {
 }
 
 whoami <- "gg"
-n_sim <- 6
-func <- "dose"
+n_sim <- 40
+func <- "null"
 done <- list.files("out/nbn")
 done <- done[grep(func, done)] |>
-  stringr::str_extract("[1-9]+") |>
+  stringr::str_extract("[0-9]+") |>
   as.integer()
 done <- if (length(done) > 0) max(done) else 0
 sims <- seq(done + 1, len = n_sim)
 
 n_cores <- 3
+spr_mod <- 0.85 * mean(E(g)$weight)
 
 if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   st_time <- Sys.time()
   results <- mclapply(
     sims, function(i) {
-      res <- get_everything(psk = 0.1, spr = 0.85, rec = 0.15, func = func)
+      res <- get_everything(psk = 0.1, spr = spr_mod, rec = 0.15, func = func)
       message(sprintf("Simulation %d/%d", i, n_sim))
       dput(res, sprintf("out/nbn/%s-%s-%03d.txt", whoami, func, i))
       return(res)
@@ -62,7 +73,7 @@ if (Sys.info()["sysname"] %in% c("Linux", "Darwin")) {
   clusterExport(
     cluster, c(
       "get_everything", "rumour_base", "rumour_dose",
-      "sims", "n_sim", "g", "n_nodes", "func", "whoami"
+      "sims", "n_sim", "g", "n_nodes", "func", "whoami", "spr_mod"
     )
   )
   st_time <- Sys.time()
